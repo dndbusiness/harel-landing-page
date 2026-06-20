@@ -387,7 +387,7 @@ footer .logo-plate img{height:40px}
         <form id="leadForm" novalidate>
           <div class="field"><label for="fullname">שם מלא <span class="req">*</span></label><input type="text" id="fullname" name="fullname" placeholder="השם שלך" autocomplete="name" required><span class="msg">נא להזין שם מלא</span></div>
           <div class="field"><label for="phone">טלפון נייד <span class="req">*</span></label><input type="tel" id="phone" name="phone" placeholder="050-0000000" autocomplete="tel" inputmode="numeric" required><span class="msg">נא להזין מספר טלפון תקין</span></div>
-          <div class="field"><label for="city">עיר / פרויקט <span class="req">*</span></label><select id="city" name="city" required style="width:100%;font-family:Heebo;font-size:1rem;color:var(--sand);background:var(--navy);border:1px solid var(--line-d);border-radius:12px;padding:14px 15px"><option value="">בחר/י עיר או פרויקט...</option><option>אשדוד — דירה צופה ים</option><option>חדרה — נווה חיים</option><option>אחר / כללי</option></select><span class="msg">נא לבחור עיר/פרויקט</span></div>
+          <div class="field"><label for="email">אימייל <span class="req">*</span></label><input type="email" id="email" name="email" placeholder="name@email.com" autocomplete="email" required><span class="msg">נא להזין כתובת אימייל תקינה</span></div>
           <div class="hp" aria-hidden="true"><label>אל תמלאו<input type="text" name="company" tabindex="-1" autocomplete="off"></label></div>
           <label class="consent"><input type="checkbox" id="consent" name="consent" checked><span>מאשר/ת קבלת פרטי השידור ועדכונים מהר-אל בוואטסאפ / אימייל.</span></label>
           <button type="submit" class="btn btn-primary" id="submitBtn">להרשמה לשידור ❮❮❮</button>
@@ -401,8 +401,8 @@ footer .logo-plate img{height:40px}
       </div>
       <div class="thanks">
         <div class="check"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></div>
-        <h3 style="font-size:clamp(1.9rem,5vw,2.7rem)">מחכים לך בשידור 🎬</h3>
-        <p style="font-size:1.08rem">קיבלנו את הפרטים — שריין מקום ונתראה בשידור הקרוב.</p>
+        <h3 style="font-size:clamp(1.9rem,5vw,2.7rem)">איזה כיף שנרשמת! 🎉</h3>
+        <p style="font-size:1.08rem">כל הפרטים בהדרכה הקרובה. הקישור לשידור יפורסם בקבוצת הוואטסאפ — הצטרפו עכשיו כדי להיכנס בזמן.</p>
         <div class="when-line" style="margin:4px 0 22px">יום ד׳ <span class="dot">·</span> 24.6 <span class="dot">·</span> 20:30 <span class="dot">·</span> אונליין בזום</div>
         <a id="bookingBtn" class="btn btn-primary" href="#" target="_blank" rel="noopener" style="max-width:360px;margin-inline:auto;margin-bottom:12px">📅 לשריון פגישה אישית ביומן</a>
         <a class="btn btn-wa" href="https://chat.whatsapp.com/CWus7C38efWAlNnL59mqu9?s=cl&p=a&ilr=0&amv=0" target="_blank" rel="noopener" style="max-width:360px;margin-inline:auto">
@@ -452,7 +452,7 @@ const BOOKING_URL = "https://chat.whatsapp.com/CWus7C38efWAlNnL59mqu9?s=cl&p=a&i
 /* form */
 (function(){
   const form=document.getElementById('leadForm'),card=document.getElementById('formCard'),btn=document.getElementById('submitBtn');
-  const name=document.getElementById('fullname'),phone=document.getElementById('phone'),city=document.getElementById('city');
+  const name=document.getElementById('fullname'),phone=document.getElementById('phone'),email=document.getElementById('email');
   const phoneOk=v=>/^0\d{8,9}$/.test(v.replace(/\D/g,''));
   const setErr=(el,bad)=>{el.classList.toggle('err',bad);return !bad;};
   // כל כפתורי הוואטסאפ -> לפי הקבועים (מספר אישי או קבוצה)
@@ -463,15 +463,15 @@ const BOOKING_URL = "https://chat.whatsapp.com/CWus7C38efWAlNnL59mqu9?s=cl&p=a&i
     e.preventDefault();let ok=true;
     ok=setErr(name,name.value.trim().length<2)&&ok;
     ok=setErr(phone,!phoneOk(phone.value))&&ok;
-    ok=setErr(city,city.value==='')&&ok;
+    ok=setErr(email,!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim()))&&ok;
     if(!ok){(form.querySelector('.err')||name).focus();return;}
     if(form.company&&form.company.value)return;
     btn.disabled=true;btn.textContent='שולח...';
-    const body=new URLSearchParams({fullname:name.value.trim(),phone:phone.value.trim(),city:city.value,source:'דף נחיתה הר-אל',timestamp:new Date().toLocaleString('he-IL')});
+    const body=new URLSearchParams({fullname:name.value.trim(),phone:phone.value.trim(),email:email.value.trim(),city:email.value.trim(),source:'דף נחיתה הר-אל · וובינר',timestamp:new Date().toLocaleString('he-IL')});
     try{if(GOOGLE_SHEET_ENDPOINT&&!GOOGLE_SHEET_ENDPOINT.startsWith('PASTE')){await fetch(GOOGLE_SHEET_ENDPOINT,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},body:body.toString()});}}catch(err){}
     card.classList.add('done');card.scrollIntoView({behavior:'smooth',block:'center'});
   });
-  [name,phone,city].forEach(el=>{el.addEventListener('input',()=>el.classList.remove('err'));el.addEventListener('change',()=>el.classList.remove('err'));});
+  [name,phone,email].forEach(el=>{el.addEventListener('input',()=>el.classList.remove('err'));el.addEventListener('change',()=>el.classList.remove('err'));});
 })();
 
 /* iframe auto-height broadcaster (for RavPage embed) */
