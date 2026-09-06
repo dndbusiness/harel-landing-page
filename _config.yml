@@ -1,0 +1,6 @@
+# GitHub Pages מפרסם את הענף main כפי שהוא.
+# הקבצים הבאים הם מקורות בנייה ואינם חלק מהאתר שמתפרסם.
+exclude:
+  - build
+  - design
+  - README.md
