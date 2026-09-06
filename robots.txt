@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://dndbusiness.github.io/harel-landing-page/sitemap.xml

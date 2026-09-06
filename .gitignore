@@ -1,0 +1,5 @@
+build/shots/
+build/*.log
+design/shots/
+design/har-el-financing-site.html
+__pycache__/
