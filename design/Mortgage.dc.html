@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&amp;family=Suez+One&amp;display=swap">
+  <style>
+:root{
+  --navy:#061A22; --navy-2:#0A2733; --navy-3:#103A4A; --navy-4:#16485B;
+  --teal:#2BB6AA; --teal-bright:#4FD6C8; --teal-deep:#178379;
+  --gold:#C99A3B; --gold-soft:#E7C879;
+  --sand:#F4F1EA; --sand-dim:rgba(244,241,234,.7); --sand-faint:rgba(244,241,234,.42);
+  --white:#FFFFFF; --ink:#0B2730; --ink-soft:#48626c;
+  --line-d:rgba(244,241,234,.12);
+  --maxw:1060px; --r:18px;
+  --shadow-d:0 34px 80px -34px rgba(0,0,0,.8);
+  --shadow-card:0 20px 44px -22px rgba(0,0,0,.55);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Heebo',system-ui,sans-serif;background:var(--navy);color:var(--sand);line-height:1.65;-webkit-font-smoothing:antialiased}
+a{color:var(--teal-bright);text-decoration:none}
+a:hover{color:var(--gold-soft)}
+img{display:block;max-width:100%}
+svg{width:100%;height:100%;display:block}
+.wrap{max-width:var(--maxw);margin-inline:auto;padding-inline:22px}
+
+/* ---- top bar ---- */
+.topbar{background:rgba(6,26,34,.82);border-bottom:1px solid var(--line-d)}
+.topbar .row{display:flex;align-items:center;justify-content:space-between;gap:20px;padding-block:11px}
+.logo-plate{display:inline-flex;align-items:center;gap:12px;direction:ltr;background:var(--sand);padding:8px 15px;border-radius:12px;box-shadow:0 8px 20px -10px rgba(0,0,0,.5)}
+.lm-word{height:30px;width:auto}
+.lm-chev{height:40px;width:auto}
+.lm-tag{display:block;font-size:.7rem;font-weight:800;color:var(--ink);letter-spacing:-.01em;margin-top:3px;direction:rtl;text-align:right}
+.lm-tag em{font-style:normal;color:var(--teal-deep)}
+.nav{display:flex;align-items:center;gap:19px}
+.nav a{font-size:.93rem;font-weight:600;color:var(--sand-dim)}
+.nav a:hover{color:var(--teal-bright)}
+.nav a.on{color:var(--teal-bright);font-weight:800}
+.tb-right{display:flex;align-items:center;gap:14px}
+.tb-phone{display:inline-flex;align-items:center;gap:7px;font-size:.95rem;font-weight:800;color:var(--sand)}
+.tb-phone svg{width:17px;height:17px;stroke:var(--teal-bright);fill:none;stroke-width:1.9}
+
+/* ---- buttons ---- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;font-family:'Heebo',sans-serif;font-size:1.06rem;font-weight:800;padding:16px 32px;border-radius:13px;border:none;cursor:pointer;line-height:1.1}
+.btn-sm{padding:10px 20px;font-size:.92rem;border-radius:11px}
+.btn-primary{background:linear-gradient(135deg,#C99A3B,#E7C879);color:#061A22;box-shadow:0 18px 38px -14px rgba(201,154,59,.6)}
+.btn-teal{background:linear-gradient(135deg,#178379,#2BB6AA);color:#fff;box-shadow:0 16px 36px -16px rgba(43,182,170,.7)}
+.btn-ghost{background:rgba(16,58,74,.55);color:var(--sand);border:1px solid var(--line-d)}
+.btn-wa{background:#25D366;color:#06241b;box-shadow:0 16px 36px -16px rgba(37,211,102,.7)}
+.btn-wa svg{width:20px;height:20px}
+.cta-row{display:flex;gap:12px;flex-wrap:wrap}
+
+/* ---- section chrome ---- */
+section.block{padding-block:60px}
+.sec-eyebrow{display:flex;align-items:center;gap:12px;justify-content:center;font-size:.8rem;font-weight:800;letter-spacing:.1em;color:var(--teal-bright);margin-bottom:13px}
+.sec-eyebrow::before,.sec-eyebrow::after{content:"";height:1px;width:34px;background:var(--line-d)}
+h1{font-family:'Suez One',Georgia,serif;font-weight:400;line-height:1.12;letter-spacing:-.01em}
+h2{font-family:'Suez One',Georgia,serif;font-weight:400;font-size:2.35rem;line-height:1.16;text-align:center;margin-bottom:14px}
+h3{font-family:'Suez One',Georgia,serif;font-weight:400}
+.u{color:var(--teal-bright)}
+.g{color:var(--gold-soft)}
+.intro-p{text-align:center;max-width:640px;margin:0 auto 40px;color:var(--sand-dim);font-size:1.05rem}
+.kicker{display:inline-flex;align-items:center;gap:9px;font-size:.82rem;font-weight:800;letter-spacing:.06em;color:var(--teal-bright);border:1px solid rgba(79,214,200,.4);background:rgba(6,26,34,.5);border-radius:999px;padding:8px 18px}
+.kicker svg{width:15px;height:15px;stroke:var(--teal-bright);fill:none;stroke-width:2}
+
+/* ---- placeholder marker: a fact only the client can supply ---- */
+.ph{color:var(--gold-soft);border-bottom:1px dashed rgba(201,154,59,.55);font-weight:800;white-space:nowrap}
+.tag-sample{display:inline-flex;align-items:center;gap:6px;font-size:.68rem;font-weight:800;letter-spacing:.04em;color:var(--gold-soft);border:1px dashed rgba(201,154,59,.5);border-radius:999px;padding:3px 10px}
+
+/* ---- cards / grids ---- */
+.grid{display:grid;gap:20px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.card{background:rgba(16,58,74,.34);border:1px solid var(--line-d);border-radius:18px;padding:26px 24px;box-shadow:var(--shadow-card);display:flex;flex-direction:column;gap:12px}
+.card h3{font-size:1.32rem;line-height:1.25}
+.card p{color:var(--sand-dim);font-size:.98rem}
+.ic-box{width:46px;height:46px;border-radius:12px;background:rgba(43,182,170,.16);display:grid;place-items:center}
+.ic-box svg{width:24px;height:24px;stroke:var(--teal-bright);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.ic-gold{background:rgba(201,154,59,.16)}
+.ic-gold svg{stroke:var(--gold-soft)}
+.card-link{display:inline-flex;align-items:center;gap:7px;font-size:.95rem;font-weight:800;color:var(--teal-bright);margin-top:auto;padding-top:6px}
+.card-link svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---- trust strip ---- */
+.trust{background:var(--navy-2);border-block:1px solid var(--line-d)}
+.trust-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding-block:26px}
+.tr{text-align:center;padding:8px 6px}
+.tr b{display:block;font-family:'Suez One',Georgia,serif;font-weight:400;font-size:1.7rem;color:var(--teal-bright);line-height:1}
+.tr b .ph{font-family:'Heebo',sans-serif;font-size:1.12rem}
+.tr span{display:block;margin-top:7px;font-size:.86rem;color:var(--sand-dim);font-weight:600}
+
+/* ---- feature rows ---- */
+.feat{display:flex;gap:13px;align-items:flex-start;padding:11px 0;border-bottom:1px dashed var(--line-d)}
+.feat:last-child{border-bottom:none}
+.feat .ic{flex:0 0 auto;width:36px;height:36px;border-radius:10px;background:rgba(43,182,170,.16);display:grid;place-items:center;margin-top:1px}
+.feat .ic svg{width:19px;height:19px;stroke:var(--teal-bright);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.feat p{font-size:1rem;color:var(--sand)}
+.feat p b{color:var(--teal-bright);font-weight:800}
+
+/* ---- numbered steps ---- */
+.steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+.step{background:var(--navy-2);border:1px solid var(--line-d);border-radius:16px;padding:24px 20px;display:flex;flex-direction:column;gap:10px}
+.step .n{font-family:'Suez One',Georgia,serif;font-weight:400;font-size:1.5rem;color:var(--gold-soft);width:44px;height:44px;border-radius:12px;background:rgba(201,154,59,.14);display:grid;place-items:center;line-height:1}
+.step h4{font-size:1.08rem;font-weight:800}
+.step p{font-size:.94rem;color:var(--sand-dim)}
+
+/* ---- comparison table ---- */
+.tbl{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--line-d);border-radius:16px;overflow:hidden;background:rgba(16,58,74,.28)}
+.tbl th{background:var(--navy-2);text-align:start;font-size:.86rem;font-weight:800;letter-spacing:.04em;color:var(--teal-bright);padding:14px 18px;border-bottom:1px solid var(--line-d)}
+.tbl td{padding:15px 18px;font-size:.96rem;color:var(--sand-dim);border-bottom:1px dashed var(--line-d);vertical-align:top}
+.tbl tr:last-child td{border-bottom:none}
+.tbl td.k{color:var(--sand);font-weight:800}
+
+/* ---- faq ---- */
+.faq{max-width:760px;margin-inline:auto;display:flex;flex-direction:column;gap:12px}
+.qa{background:var(--navy-2);border:1px solid var(--line-d);border-radius:14px;padding:20px 22px}
+.qa h4{font-size:1.05rem;font-weight:800;margin-bottom:7px;display:flex;align-items:center;gap:10px}
+.qa h4 svg{width:17px;height:17px;stroke:var(--teal-bright);fill:none;stroke-width:2.2;flex:0 0 auto}
+.qa p{font-size:.96rem;color:var(--sand-dim)}
+
+/* ---- lead form ---- */
+.form-card{max-width:540px;margin-inline:auto;background:linear-gradient(165deg,var(--navy-3),var(--navy-2));border:1px solid rgba(201,154,59,.24);border-radius:22px;padding:34px 28px;box-shadow:var(--shadow-d)}
+.field{margin-bottom:15px;text-align:start}
+.field label{display:block;font-size:.9rem;font-weight:700;margin-bottom:7px}
+.field label .req{color:var(--gold-soft)}
+.field .inp{width:100%;font-size:1rem;color:var(--sand-faint);background:var(--navy);border:1px solid var(--line-d);border-radius:12px;padding:14px 15px}
+.field .sel{display:flex;align-items:center;justify-content:space-between}
+.field .sel svg{width:15px;height:15px;stroke:var(--sand-faint);fill:none;stroke-width:2.2}
+.consent{display:flex;gap:10px;align-items:flex-start;margin-bottom:20px;font-size:.84rem;color:var(--sand-dim)}
+.consent .box{width:17px;height:17px;border:1px solid var(--line-d);border-radius:4px;background:var(--navy);flex:0 0 auto;margin-top:4px}
+.form-card .btn{width:100%}
+.form-note{text-align:center;font-size:.82rem;color:var(--sand-faint);margin-top:14px}
+
+/* ---- footer ---- */
+footer{background:var(--navy-2);border-top:1px solid var(--line-d);padding-block:38px 30px}
+.foot-top{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:28px;padding-bottom:26px;border-bottom:1px solid var(--line-d)}
+.foot-col h5{font-size:.82rem;font-weight:800;letter-spacing:.08em;color:var(--teal-bright);margin-bottom:12px}
+.foot-col ul{list-style:none;display:flex;flex-direction:column;gap:8px}
+.foot-col a{font-size:.92rem;color:var(--sand-dim)}
+.foot-col a:hover{color:var(--teal-bright)}
+.foot-blurb{font-size:.9rem;color:var(--sand-dim);margin-top:14px;max-width:280px}
+.disclaimer{max-width:900px;margin:22px auto 0;font-size:.76rem;color:var(--sand-faint);line-height:1.75;text-align:center}
+.meta-dis{margin-top:12px;font-size:.72rem;color:var(--sand-faint);opacity:.8;text-align:center}
+</style>
+</helmet>
+<div dir="rtl" style="background:#061A22;min-height:100%">
+<header class="topbar"><div class="wrap"><div class="row"><a href="#" style="display:inline-flex"><span class="logo-plate"><span><img class="lm-word" src="wordmark.png" alt="הר-אל" style="height:30px"><span class="lm-tag" style="font-size:.7rem">פתרונות מימון <em>חכמים</em></span></span><img class="lm-chev" src="chevrons.png" alt="" style="height:40px"></span></a><nav class="nav"><a href="#" class="">בית</a><a href="#" class="on">משכנתאות</a><a href="#" class="">הלוואות רכב</a><a href="#" class="">מימון לעסקים</a><a href="#" class="">לכל מטרה</a><a href="#" class="">אודות</a><a href="#" class="">צור קשר</a></nav><div class="tb-right"><span class="tb-phone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6.2 3.8h3l1.5 3.7-1.9 1.4a11.4 11.4 0 0 0 5.3 5.3l1.4-1.9 3.7 1.5v3a1.8 1.8 0 0 1-1.9 1.8A15.6 15.6 0 0 1 4.4 5.7a1.8 1.8 0 0 1 1.8-1.9z"/></svg><span class="ph">[טלפון]</span></span><a href="#" class="btn btn-sm btn-primary">בדיקת זכאות</a></div></div></div></header><section style="position:relative;overflow:hidden;background:radial-gradient(56% 84% at 82% -10%,rgba(43,182,170,.19),transparent 62%),radial-gradient(48% 70% at 6% 10%,rgba(201,154,59,.12),transparent 64%),linear-gradient(180deg,#0A2733 0%,#061A22 88%)"><div class="wrap" style="padding-block:64px 70px"><div style="display:grid;grid-template-columns:1.12fr .88fr;gap:52px;align-items:center"><div style="display:flex;flex-direction:column;align-items:flex-start"><span class="kicker" style="margin-bottom:20px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10.6 12 3.8l8.5 6.8"/><path d="M5.8 9.6V20h12.4V9.6"/><path d="M10 20v-5.2h4V20"/></svg> משכנתאות</span><h1 style="font-size:2.9rem;margin-bottom:16px">המשכנתא היא ההלוואה הגדולה בחייכם.<br>שווה לתמחר אותה <span class="g">יותר מפעם אחת</span>.</h1><p style="font-size:1.1rem;color:rgba(244,241,234,.78);max-width:540px;margin-bottom:26px">משכנתא ראשונה, מיחזור, הגדלה או איחוד חובות פנימה. אנחנו בונים את התמהיל, מוציאים אותו למכרז בין הבנקים ומביאים לכם את ההצעות זו לצד זו — במספרים, לא בהבטחות.</p><div class="cta-row"><a href="#" class="btn btn-primary">לבדיקת זכאות ללא עלות</a><a href="#" class="btn btn-wa"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm0 18.13c-1.5 0-2.98-.4-4.27-1.17l-.31-.18-3.12.82.83-3.04-.2-.31a8.2 8.2 0 0 1-1.26-4.34c0-4.54 3.7-8.23 8.24-8.23 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.82c0 4.54-3.7 8.21-8.14 8.21zm4.52-6.16c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.13-.16.24-.64.8-.78.97-.14.16-.29.19-.54.06-.25-.12-1.05-.39-1.99-1.23-.74-.65-1.23-1.46-1.38-1.71-.14-.25-.01-.38.11-.5.11-.11.25-.29.37-.43.13-.15.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.12-.56-1.34-.76-1.84-.2-.48-.4-.42-.56-.43h-.47c-.17 0-.43.06-.66.31-.23.25-.86.85-.86 2.06s.89 2.39 1.01 2.56c.12.16 1.75 2.67 4.23 3.74.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.48-.07 1.47-.6 1.67-1.18.21-.58.21-1.07.15-1.18-.06-.1-.23-.16-.48-.29z"/></svg> וואטסאפ</a></div></div><div style="background:linear-gradient(165deg,#103A4A,#0A2733);border:1px solid rgba(201,154,59,.24);border-radius:20px;padding:26px 24px;box-shadow:0 34px 80px -34px rgba(0,0,0,.8)"><div style="display:flex;align-items:center;gap:11px;margin-bottom:14px"><span class="ic-box ic-gold" style="width:38px;height:38px;border-radius:11px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><circle cx="12" cy="12" r="4.6"/><circle cx="12" cy="12" r="1.1"/></svg></span><h3 style="font-size:1.18rem">מתי כדאי לבדוק מיחזור</h3></div><div style="display:flex;gap:11px;align-items:flex-start;padding:10px 0;border-bottom:1px dashed rgba(244,241,234,.12)"><span style="flex:0 0 auto;width:20px;height:20px;border-radius:6px;background:rgba(43,182,170,.18);display:grid;place-items:center;color:#4FD6C8;margin-top:3px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px"><path d="M5 12.6 9.4 17 19 7.2"/></svg></span><span style="font-size:.98rem;color:rgba(244,241,234,.82)">לקחתם את המשכנתא לפני שלוש שנים או יותר</span></div><div style="display:flex;gap:11px;align-items:flex-start;padding:10px 0;border-bottom:1px dashed rgba(244,241,234,.12)"><span style="flex:0 0 auto;width:20px;height:20px;border-radius:6px;background:rgba(43,182,170,.18);display:grid;place-items:center;color:#4FD6C8;margin-top:3px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px"><path d="M5 12.6 9.4 17 19 7.2"/></svg></span><span style="font-size:.98rem;color:rgba(244,241,234,.82)">יש לכם מסלול פריים גדול או משתנה שעומד לפני עדכון</span></div><div style="display:flex;gap:11px;align-items:flex-start;padding:10px 0;border-bottom:1px dashed rgba(244,241,234,.12)"><span style="flex:0 0 auto;width:20px;height:20px;border-radius:6px;background:rgba(43,182,170,.18);display:grid;place-items:center;color:#4FD6C8;margin-top:3px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px"><path d="M5 12.6 9.4 17 19 7.2"/></svg></span><span style="font-size:.98rem;color:rgba(244,241,234,.82)">ההכנסה או דירוג האשראי שלכם השתפרו מאז</span></div><div style="display:flex;gap:11px;align-items:flex-start;padding:10px 0;border-bottom:1px dashed rgba(244,241,234,.12)"><span style="flex:0 0 auto;width:20px;height:20px;border-radius:6px;background:rgba(43,182,170,.18);display:grid;place-items:center;color:#4FD6C8;margin-top:3px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px"><path d="M5 12.6 9.4 17 19 7.2"/></svg></span><span style="font-size:.98rem;color:rgba(244,241,234,.82)">אתם גוררים במקביל הלוואות צרכניות בריבית גבוהה</span></div><div style="display:flex;gap:11px;align-items:flex-start;padding:10px 0;border-bottom:1px dashed rgba(244,241,234,.12)"><span style="flex:0 0 auto;width:20px;height:20px;border-radius:6px;background:rgba(43,182,170,.18);display:grid;place-items:center;color:#4FD6C8;margin-top:3px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px"><path d="M5 12.6 9.4 17 19 7.2"/></svg></span><span style="font-size:.98rem;color:rgba(244,241,234,.82)">נשארו לכם יותר מעשר שנות החזר</span></div></div></div></div></section><section class="block"><div class="wrap"><div class="sec-eyebrow">מסלולי משכנתא</div><h2>מה בדיוק אנחנו <span class="u">עושים לכם</span></h2><p class="intro-p">ארבעה מהלכים שונים לחלוטין — לכל אחד מהם היגיון אחר ותזמון אחר.</p><div class="grid g2"><div class="card"><span class="ic-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10.6 12 3.8l8.5 6.8"/><path d="M5.8 9.6V20h12.4V9.6"/><path d="M10 20v-5.2h4V20"/></svg></span><h3>משכנתא לרכישת דירה</h3><p>דירה ראשונה, שדרוג או דירה להשקעה. מלווים אתכם משלב האישור העקרוני — עוד לפני שחתמתם על זיכרון דברים — ועד ההעברה לחשבון המוכר.</p><a href="#" class="card-link">לפרטים <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15.4 5.6 8.8 12l6.6 6.4"/></svg></a></div><div class="card"><span class="ic-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5.4 4.2v4.2c0 2 1.6 3.6 3.6 3.6h6"/><path d="M5.4 19.8v-4.2c0-2 1.6-3.6 3.6-3.6h6"/><path d="m15.6 8.4 3.6 3.6-3.6 3.6"/></svg></span><h3>מיחזור משכנתא</h3><p>בודקים את התמהיל הקיים מול התנאים שאפשר לקבל היום, מחשבים עמלת פירעון מוקדם ומראים לכם בשחור-על-לבן אם המהלך משתלם — גם כשהתשובה היא לא.</p><a href="#" class="card-link">לפרטים <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15.4 5.6 8.8 12l6.6 6.4"/></svg></a></div><div class="card"><span class="ic-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 16.6 9.6 10.6l3.4 3.4 7-7.4"/><path d="M15.4 6.6H20v4.6"/></svg></span><h3>הגדלת משכנתא</h3><p>צריכים הון לשיפוץ, לעסק או לעזרה לילדים? הגדלה על נכס קיים היא בדרך כלל המקור הזול ביותר שיש לכם, ולרוב לא מציעים לכם אותה יזומה.</p><a href="#" class="card-link">לפרטים <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15.4 5.6 8.8 12l6.6 6.4"/></svg></a></div><div class="card"><span class="ic-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3.6 8.4 4.2-8.4 4.2-8.4-4.2z"/><path d="m3.6 12 8.4 4.2 8.4-4.2"/><path d="m3.6 16.2 8.4 4.2 8.4-4.2"/></svg></span><h3>איחוד הלוואות לתוך המשכנתא</h3><p>מכניסים הלוואות צרכניות יקרות אל תוך המשכנתא ומורידים את ההחזר החודשי הכולל. נראה לכם גם את הצד השני — הארכת התקופה ועלות הריבית המצטברת.</p><a href="#" class="card-link">לפרטים <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15.4 5.6 8.8 12l6.6 6.4"/></svg></a></div></div></div></section><section class="block" style="background:#0A2733;border-block:1px solid rgba(244,241,234,.12)"><div class="wrap"><div class="sec-eyebrow">תמהיל המשכנתא</div><h2>למה <span class="u">התמהיל</span> חשוב יותר מהריבית</h2><p class="intro-p">אין מסלול טוב או רע — יש מסלול שמתאים למצב שלכם. זו הטבלה שאנחנו עוברים עליה יחד בשיחה.</p><div style="overflow-x:auto"><table class="tbl"><thead><tr><th>מסלול</th><th>מה טוב בו</th><th>מה הסיכון</th><th>מתי הוא נכון</th></tr></thead><tbody><tr><td class="k">קבועה לא צמודה</td><td class="">ההחזר החודשי ידוע ונעול לכל התקופה</td><td class="">הריבית ההתחלתית גבוהה יותר, ועמלת פירעון מוקדם עלולה להיות משמעותית</td><td class="">כשהיציבות חשובה לכם יותר מהחיסכון, ואין כוונה למכור בקרוב</td></tr><tr><td class="k">קבועה צמודה למדד</td><td class="">ריבית התחלתית נמוכה מהקבועה הלא-צמודה</td><td class="">הקרן עצמה גדלה עם המדד — ההחזר עולה גם בלי שהריבית זזה</td><td class="">בתמהיל, כרכיב מוגבל, כשיש ודאות בהכנסה</td></tr><tr><td class="k">פריים</td><td class="">בדרך כלל הזול בתמהיל, וללא עמלת פירעון מוקדם</td><td class="">צמוד להחלטות ריבית בנק ישראל — ההחזר יכול לעלות בלי התראה</td><td class="">כשיש כרית ביטחון בתזרים, או צפי לפירעון מוקדם</td></tr><tr><td class="k">משתנה כל 5 שנים</td><td class="">ריבית נמוכה מהקבועה, ונקודות יציאה כל חמש שנים</td><td class="">בכל תחנה הריבית נקבעת מחדש לפי העוגן</td><td class="">כשמתכננים למכור או למחזר בטווח של כמה שנים</td></tr></tbody></table></div></div></section><section class="block"><div class="wrap"><div class="sec-eyebrow">מיחזור בפועל</div><h2>איך נראה <span class="g">חיסכון אמיתי</span></h2><div style="background:rgba(16,58,74,.34);border:1px solid rgba(244,241,234,.12);border-radius:18px;padding:28px 26px;box-shadow:0 20px 44px -22px rgba(0,0,0,.55)"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px"><h3 style="font-size:1.28rem">כך נראית בדיקת מיחזור אצלנו</h3><span class="tag-sample">מבנה לדוגמה · המספרים למילוי</span></div><div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px"><div style="background:#0A2733;border:1px solid rgba(244,241,234,.12);border-radius:14px;padding:18px 18px"><div style="font-size:.82rem;font-weight:800;color:#4FD6C8;margin-bottom:8px">היום</div><div style="font-family:'Suez One',Georgia,serif;font-size:1.5rem;color:#E7C879;line-height:1.2;margin-bottom:6px"><span class="ph">[החזר נוכחי]</span> ₪</div><div style="font-size:.88rem;color:rgba(244,241,234,.7)">ההחזר החודשי בתמהיל הקיים</div></div><div style="background:#0A2733;border:1px solid rgba(244,241,234,.12);border-radius:14px;padding:18px 18px"><div style="font-size:.82rem;font-weight:800;color:#4FD6C8;margin-bottom:8px">אחרי מיחזור</div><div style="font-family:'Suez One',Georgia,serif;font-size:1.5rem;color:#E7C879;line-height:1.2;margin-bottom:6px"><span class="ph">[החזר חדש]</span> ₪</div><div style="font-size:.88rem;color:rgba(244,241,234,.7)">ההחזר לפי ההצעה הטובה שהתקבלה</div></div><div style="background:#0A2733;border:1px solid rgba(244,241,234,.12);border-radius:14px;padding:18px 18px"><div style="font-size:.82rem;font-weight:800;color:#4FD6C8;margin-bottom:8px">חיסכון מצטבר</div><div style="font-family:'Suez One',Georgia,serif;font-size:1.5rem;color:#E7C879;line-height:1.2;margin-bottom:6px"><span class="ph">[סכום]</span> ₪</div><div style="font-size:.88rem;color:rgba(244,241,234,.7)">בניכוי עמלת פירעון מוקדם ועלויות</div></div></div><p style="font-size:.82rem;color:rgba(244,241,234,.42);margin-top:16px">המספרים משתנים מתיק לתיק לפי יתרה, תקופה, תמהיל ודירוג אשראי. אין באמור הבטחת חיסכון כלשהו.</p></div></div></section><section class="block" style="background:#0A2733;border-block:1px solid rgba(244,241,234,.12)"><div class="wrap"><div class="sec-eyebrow">תהליך</div><h2>ארבעה שלבים, בסדר הזה</h2><div class="steps"><div class="step"><span class="n">1</span><h4>איסוף התמונה המלאה</h4><p>דוח יתרות לסילוק, לוח סילוקין, תלושים ותנועות עו״ש. בלי זה כל שיחה על ריבית היא ניחוש.</p></div><div class="step"><span class="n">2</span><h4>בניית תמהיל</h4><p>מחלקים את הסכום בין המסלולים לפי מה שנכון לכם — אופק ההחזקה בנכס, יציבות ההכנסה והסבילות שלכם לתנודה.</p></div><div class="step"><span class="n">3</span><h4>מכרז בין הבנקים</h4><p>אותה בקשה בדיוק יוצאת לכמה בנקים במקביל, ואז מתחיל סבב שני מול מי שחזר הכי טוב.</p></div><div class="step"><span class="n">4</span><h4>השוואה וחתימה</h4><p>פורסים את ההצעות זו לצד זו — ריבית, החזר, עלות כוללת ועמלות — ורק אז מחליטים.</p></div></div></div></section><section class="block"><div class="wrap"><div class="sec-eyebrow">שאלות נפוצות</div><h2>מה שרוב הלקוחות שואלים בשיחה הראשונה</h2><div class="faq"><div class="qa"><h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><path d="M9.7 9.5a2.4 2.4 0 1 1 3.2 2.3c-.6.2-.9.8-.9 1.4v.5"/><path d="M12 16.6h.02" stroke-width="2.6"/></svg>כמה עולה לי הבדיקה?</h4><p>בדיקת הכדאיות אינה כרוכה בתשלום. שכר הטרחה נגבה רק אם המשכנתא אושרה ואתם בחרתם לקחת אותה, והוא מוצג לכם מראש בכתב לפני תחילת העבודה.</p></div><div class="qa"><h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><path d="M9.7 9.5a2.4 2.4 0 1 1 3.2 2.3c-.6.2-.9.8-.9 1.4v.5"/><path d="M12 16.6h.02" stroke-width="2.6"/></svg>מיחזור פוגע לי בדירוג האשראי?</h4><p>בקשת משכנתא מייצרת בדיקה מול נתוני האשראי. אנחנו בונים את התיק לפני ההגשות ומרכזים אותן לחלון זמן קצר, כדי לצמצם את מספר הפניות.</p></div><div class="qa"><h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><path d="M9.7 9.5a2.4 2.4 0 1 1 3.2 2.3c-.6.2-.9.8-.9 1.4v.5"/><path d="M12 16.6h.02" stroke-width="2.6"/></svg>יש עמלת פירעון מוקדם — עדיין כדאי?</h4><p>לפעמים כן ולפעמים לא. אנחנו מחשבים את העמלה מול החיסכון הצפוי לאורך התקופה, ואם המהלך לא משתלם נגיד לכם את זה מפורשות.</p></div><div class="qa"><h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><path d="M9.7 9.5a2.4 2.4 0 1 1 3.2 2.3c-.6.2-.9.8-.9 1.4v.5"/><path d="M12 16.6h.02" stroke-width="2.6"/></svg>כמה זמן זה לוקח?</h4><p>בדיקה ראשונית והצגת כיוון — תוך ימים ספורים מרגע שהמסמכים בידינו. לוח הזמנים עד ההעמדה בפועל תלוי בבנק ובסוג העסקה.</p></div></div></div></section><section style="position:relative;overflow:hidden;padding-block:62px;background:radial-gradient(90% 70% at 50% 0,rgba(43,182,170,.14),transparent 60%),#061A22"><div class="wrap" style="text-align:center"><h2 style="margin-bottom:12px">נבדוק אם כדאי לכם למחזר</h2><p class="intro-p" style="margin-bottom:28px">שולחים לנו את לוח הסילוקין, ואנחנו חוזרים עם תשובה ברורה — כולל המקרה שבו עדיף להישאר.</p><div class="cta-row" style="justify-content:center"><a href="#" class="btn btn-primary">לבדיקת כדאיות מיחזור</a><a href="#" class="btn btn-wa"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm0 18.13c-1.5 0-2.98-.4-4.27-1.17l-.31-.18-3.12.82.83-3.04-.2-.31a8.2 8.2 0 0 1-1.26-4.34c0-4.54 3.7-8.23 8.24-8.23 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.82c0 4.54-3.7 8.21-8.14 8.21zm4.52-6.16c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.13-.16.24-.64.8-.78.97-.14.16-.29.19-.54.06-.25-.12-1.05-.39-1.99-1.23-.74-.65-1.23-1.46-1.38-1.71-.14-.25-.01-.38.11-.5.11-.11.25-.29.37-.43.13-.15.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.12-.56-1.34-.76-1.84-.2-.48-.4-.42-.56-.43h-.47c-.17 0-.43.06-.66.31-.23.25-.86.85-.86 2.06s.89 2.39 1.01 2.56c.12.16 1.75 2.67 4.23 3.74.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.48-.07 1.47-.6 1.67-1.18.21-.58.21-1.07.15-1.18-.06-.1-.23-.16-.48-.29z"/></svg> לשיחה בוואטסאפ</a></div><p style="font-size:.82rem;color:rgba(244,241,234,.42);margin-top:16px">הבדיקה אינה כרוכה בתשלום ואינה מחייבת אתכם בדבר.</p></div></section><footer><div class="wrap"><div class="foot-top"><div class="foot-col"><span class="logo-plate"><span><img class="lm-word" src="wordmark.png" alt="הר-אל" style="height:26px"><span class="lm-tag" style="font-size:.64rem">פתרונות מימון <em>חכמים</em></span></span><img class="lm-chev" src="chevrons.png" alt="" style="height:34px"></span><p class="foot-blurb">מלווים משפחות ועסקים בישראל מול הבנקים והגופים החוץ-בנקאיים — עד שהמימון הנכון נמצא.</p></div><div class="foot-col"><h5>פתרונות מימון</h5><ul><li><a href="#">משכנתאות</a></li><li><a href="#">הלוואות רכב</a></li><li><a href="#">מימון לעסקים</a></li><li><a href="#">הלוואות לכל מטרה</a></li></ul></div><div class="foot-col"><h5>החברה</h5><ul><li><a href="#">אודות הר-אל</a></li><li><a href="#">הצוות</a></li><li><a href="#">תהליך העבודה</a></li><li><a href="#">שאלות נפוצות</a></li></ul></div><div class="foot-col"><h5>יצירת קשר</h5><ul><li><a href="#">[טלפון]</a></li><li><a href="#">[אימייל]</a></li><li><a href="#">וואטסאפ</a></li><li><a href="#">משה דיין 10, פתח תקווה</a></li></ul></div></div><p class="disclaimer">הר-אל פתרונות מימון חכמים (<span class="ph">[שם החברה הרשומה]</span> בע״מ) · ח.פ. <span class="ph">[מספר]</span> · בעל רישיון למתן שירותי אשראי מטעם רשות שוק ההון, הביטוח והחיסכון, רישיון מס׳ <span class="ph">[מספר רישיון]</span>. אי־עמידה בפירעון ההלוואה עלולה לגרור חיוב בריבית פיגורים והליכי הוצאה לפועל. האמור באתר הוא מידע כללי בלבד ואינו מהווה ייעוץ, הצעה או התחייבות למתן אשראי; אישור ההלוואה, סכומה, הריבית ותנאיה נתונים לשיקול דעתו הבלעדי של הגוף המממן וכפופים להסכם חתום.</p><p class="meta-dis">© כל הזכויות שמורות להר-אל פתרונות מימון חכמים.</p></div></footer>
+</div>
+</x-dc>
+</body>
+</html>
