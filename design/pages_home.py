@@ -16,7 +16,8 @@ def hero():
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" '
         'stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px">'
         '<path d="M5 12.6 9.4 17 19 7.2"/></svg></span>%s</span>' % t
-        for t in ["בדיקת זכאות ללא עלות", "בלי לפגוע בדירוג האשראי", "לא משלמים אם לא לוקחים"])
+        for t in ["בדיקת זכאות ללא עלות", "הבדיקה הראשונית לא נרשמת בנתוני האשראי",
+                 "לא משלמים אם לא לוקחים"])
 
     form_rows = "".join(
         '<div style="margin-bottom:12px">'
@@ -28,7 +29,7 @@ def hero():
                       + icon("chev") + '</span>') if caret else "")
         for lab, val, caret in [
             ("מה אתם צריכים לממן?", "משכנתא / מיחזור משכנתא", True),
-            ("סכום מבוקש", "250,000 ₪", False),
+            ("סכום מבוקש", "למשל 250,000 ₪", False),
             ("טלפון לחזרה", "050-0000000", False)])
 
     return ('<section style="position:relative;overflow:hidden;background:%s">'
@@ -40,12 +41,12 @@ def hero():
 
             # --- copy column
             '<div style="display:flex;flex-direction:column;align-items:flex-start;gap:0">'
-            '<span class="kicker" style="margin-bottom:22px">%s רישיון מתן אשראי · רשות שוק ההון</span>'
+            '<span class="kicker" style="margin-bottom:22px">%s רישיון למתן שירותי אשראי · רשות שוק ההון</span>'
             '<h1 style="font-size:3.3rem;margin-bottom:18px">המימון הנכון קיים.<br>'
             'רק לא תמיד <span class="u">בבנק שלכם</span>.</h1>'
             '<p style="font-size:1.14rem;color:rgba(244,241,234,.78);max-width:520px;margin-bottom:26px">'
             'הר-אל מציגה את התיק שלכם במקביל לבנקים, לגופים החוץ-בנקאיים ולקרנות — '
-            'ומביאה את המסלול הזול ביותר שאתם באמת זכאים לו. '
+            'ומציגה לכם את ההצעות שחוזרות זו לצד זו — כולל העלות הכוללת של כל אחת. '
             'משכנתאות, רכב, מימון עסקי והלוואות לכל מטרה.</p>'
             '<div class="cta-row" style="margin-bottom:26px">'
             '<a href="#" class="btn btn-primary">לבדיקת זכאות ללא עלות</a>'
@@ -59,11 +60,11 @@ def hero():
             'box-shadow:0 34px 80px -34px rgba(0,0,0,.8)">'
             '<div style="display:flex;align-items:center;gap:11px;margin-bottom:6px">'
             '<span class="ic-box ic-gold" style="width:38px;height:38px;border-radius:11px">%s</span>'
-            '<h3 style="font-size:1.32rem">בדיקת זכאות ב-60 שניות</h3></div>'
+            '<h3 style="font-size:1.32rem">בדיקת זכאות ראשונית</h3></div>'
             '<p style="font-size:.92rem;color:rgba(244,241,234,.7);margin-bottom:20px">'
-            'ממלאים שלושה שדות — ומקבלים תשובה עקרונית מאיתנו, לא מהמערכת.</p>'
+            'שלושה שדות, פחות מדקה למלא — ואנחנו חוזרים אליכם עם הערכה ראשונית.</p>'
             '%s'
-            '<a href="#" class="btn btn-primary" style="width:100%%;margin-top:6px">שלחו לי תשובה עקרונית</a>'
+            '<a href="#" class="btn btn-primary" style="width:100%%;margin-top:6px">שלחו לי הערכה ראשונית</a>'
             '<p style="text-align:center;font-size:.8rem;color:rgba(244,241,234,.42);margin-top:13px">'
             'הפרטים נשמרים אצלנו בלבד ואינם מועברים לגורם שלישי ללא אישורכם.</p>'
             '</div>'
@@ -112,12 +113,12 @@ def why():
     rows = [
         ("users", "אתם לא מתמקחים לבד",
          "הבנק שלכם רואה בקשה אחת ומתמחר אותה כמו שנוח לו. אנחנו מציגים את אותו תיק "
-         "לעשרות גופים במקביל — <b>וזה מה שמזיז את הריבית</b>, לא שיחה נוספת עם הפקיד."),
+         "לגופים המממנים הרלוונטיים במקביל — <b>וזה מה שמזיז את הריבית</b>, לא שיחה נוספת עם הפקיד."),
         ("doc", "התיק שלכם מוגש נכון",
-         "חלק גדול מהסירובים לא נובעים מהלקוח אלא <b>מהאופן שבו הבקשה הוגשה</b>: "
+         "הרבה מהסירובים שאנחנו רואים אינם נובעים מהלקוח אלא <b>מהאופן שבו הבקשה הוגשה</b>: "
          "מסמך חסר, הכנסה שלא הוצגה נכון, תזרים שלא הוסבר. אנחנו מסדרים את זה לפני ההגשה."),
         ("key", "אנחנו מכירים את מי שמחליט",
-         "עבודה שוטפת מול מנהלות אשראי ומחלקות עסקיות בבנקים המובילים. "
+         "עבודה שוטפת מול מחלקות האשראי והמחלקות העסקיות בבנקים המובילים. "
          "כשצריך חריגה מהמדיניות, <b>יש עם מי לדבר</b> — ולא דרך מוקד טלפוני."),
         ("scale", "האינטרס שלנו זהה לשלכם",
          "בדיקת הזכאות לא עולה לכם דבר, ואנחנו מתוגמלים <b>רק אם ההלוואה אושרה ואתם בחרתם לקחת אותה</b>. "
@@ -147,7 +148,7 @@ def process():
     steps = [
         ("1", "שיחת אבחון", "רבע שעה בטלפון: מה צריך לממן, איזה החזר חודשי באמת נוח לכם, "
                             "ומה המצב בדוחות ובדירוג האשראי."),
-        ("2", "בניית התיק", "אוספים את המסמכים ומרכיבים את הבקשה כך שתתקבל — "
+        ("2", "בניית התיק", "אוספים את המסמכים ומרכיבים את הבקשה כך שתוצג בצורה המיטבית — "
                             "כולל הסבר לכל סעיף שעלול לעורר שאלה."),
         ("3", "מכרז בין הגופים", "התיק יוצא במקביל לגופים הרלוונטיים. "
                                  "משווים את ההצעות שחוזרות — ריבית, עמלות ותנאי פירעון מוקדם."),
@@ -192,18 +193,43 @@ def team_cards():
                member("dan.jpg", "דן שם טוב", "מייסד שותף · מימון ואשראי",
                       "״יש תמיד יותר מדרך אחת לממן עסקה — צריך רק לדעת לחפש.״",
                       "מומחה מימון עם קשרים עמוקים בעולם הבנקאות והקרנות. "
-                      "דן עובד צמוד למנהלות האשראי בבנקים המובילים ומכיר את מדיניות החיתום של כל גוף — "
+                      "דן עובד צמוד למחלקות האשראי בבנקים המובילים ומכיר את מדיניות החיתום של כל גוף — "
                       "כולל את המקומות שבהם יש גמישות.",
                       ["מבנה מימון", "משכנתאות", "קשרים בנקאיים", "אשראי עסקי"])))
 
 
 def team():
+    """Home page carries a teaser only; the full bios live on the About page."""
+    def teaser(img, name, role, line):
+        return ('<div class="card" style="flex-direction:row;gap:18px;align-items:center;'
+                'padding:22px 22px">'
+                '<img src="%s" alt="%s" style="width:104px;height:104px;flex:0 0 auto;'
+                'border-radius:16px;object-fit:cover;object-position:top center;'
+                'border:1px solid rgba(244,241,234,.12)">'
+                '<div>'
+                '<h3 style="font-size:1.28rem;margin-bottom:2px">%s</h3>'
+                '<span style="display:inline-block;font-size:.82rem;font-weight:800;color:#4FD6C8;'
+                'margin-bottom:9px">%s</span>'
+                '<p style="font-size:.97rem;color:rgba(244,241,234,.7)">%s</p>'
+                '</div></div>' % (img, name, name, role, line))
+
     return ('<section class="block" style="background:#0A2733;'
             'border-block:1px solid rgba(244,241,234,.12)"><div class="wrap">'
             '<div class="sec-eyebrow">מי עומד מאחורי זה</div>'
             '<h2>שני מייסדים. <span class="u">שתי התמחויות משלימות.</span></h2>'
             '<p class="intro-p">אחד בונה את האסטרטגיה, השני מביא את הכסף. '
-            'התיק שלכם עובר דרך שניהם.</p>%s</div></section>' % team_cards())
+            'התיק שלכם עובר דרך שניהם.</p>'
+            '<div class="grid g2">%s%s</div>'
+            '<div style="text-align:center;margin-top:26px">'
+            '<a href="#" class="btn btn-teal btn-sm">להכיר את הצוות לעומק %s</a></div>'
+            '</div></section>'
+            % (teaser("aviv.jpg", "אביב בר", "מייסד שותף · אסטרטגיה פיננסית",
+                      "מתרגם מטרה כלכלית לתוכנית מימון מעשית: כמה באמת צריך ללוות, "
+                      "לכמה זמן, ומה ההחזר שלא ישבור לכם את התזרים."),
+               teaser("dan.jpg", "דן שם טוב", "מייסד שותף · מימון ואשראי",
+                      "מכיר את מדיניות החיתום של כל גוף מממן — כולל את המקומות "
+                      "שבהם יש גמישות."),
+               icon("arrow")))
 
 
 def testimonials():
@@ -228,7 +254,7 @@ def testimonials():
     return ('<section class="block"><div class="wrap">'
             '<div class="sec-eyebrow">לקוחות מספרים</div>'
             '<h2>לא הבטחות. <span class="g">תיקים שנסגרו.</span></h2>'
-            '<p class="intro-p">שלוש הכרטיסיות הבאות הן טקסט לדוגמה שממחיש את המבנה — '
+            '<p class="intro-p">שלוש העדויות הבאות הן טקסט לדוגמה שממחיש את המבנה — '
             'להחלפה בעדויות אמיתיות שתאשרו לפרסום.</p>'
             '<div class="grid g3">%s</div></div></section>' % cards)
 
@@ -248,10 +274,10 @@ def cta():
             '<div class="sec-eyebrow">הצעד הבא</div>'
             '<h2>נבדוק לכם את הזכאות. <span class="u">בלי עלות, בלי התחייבות.</span></h2>'
             '<p class="intro-p">משאירים פרטים, ואנחנו חוזרים אליכם עם תמונה ברורה: '
-            'למה אתם זכאים, באיזה גוף, ומה זה אומר בהחזר החודשי.</p>'
+            'לאילו תנאים אתם זכאים, באיזה גוף, ומה זה אומר בהחזר החודשי.</p>'
             '<div class="form-card">%s'
             '<div class="consent"><span class="box"></span>'
-            '<span>מאשר/ת שיצרו איתי קשר בטלפון, בוואטסאפ ובאימייל בנוגע לפנייה זו.</span></div>'
+            '<span>מאשר/ת קבלת פנייה חוזרת בטלפון, בוואטסאפ ובאימייל בנוגע לפנייה זו.</span></div>'
             '<a href="#" class="btn btn-primary">לבדיקת זכאות</a>'
             '<p class="form-note">בדיקת הזכאות אינה כרוכה בתשלום ואינה מחייבת אתכם בדבר.</p>'
             '</div></div></section>' % fields)

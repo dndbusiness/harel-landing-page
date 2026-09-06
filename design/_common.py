@@ -43,6 +43,7 @@ svg{width:100%;height:100%;display:block}
 
 /* ---- buttons ---- */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;font-family:'Heebo',sans-serif;font-size:1.06rem;font-weight:800;padding:16px 32px;border-radius:13px;border:none;cursor:pointer;line-height:1.1}
+.btn svg{width:18px;height:18px;flex:0 0 auto}
 .btn-sm{padding:10px 20px;font-size:.92rem;border-radius:11px}
 .btn-primary{background:linear-gradient(135deg,#C99A3B,#E7C879);color:#061A22;box-shadow:0 18px 38px -14px rgba(201,154,59,.6)}
 .btn-teal{background:linear-gradient(135deg,#178379,#2BB6AA);color:#fff;box-shadow:0 16px 36px -16px rgba(43,182,170,.7)}
@@ -166,6 +167,7 @@ _I = {
  "calc":'<rect x="6.2" y="3.4" width="11.6" height="17.2" rx="1.8"/><path d="M9 7.2h6"/><path d="M9.4 11.4h.02M12 11.4h.02M14.6 11.4h.02M9.4 14.4h.02M12 14.4h.02M14.6 14.4h.02M9.4 17.4h.02M12 17.4h.02M14.6 17.4h.02" stroke-width="2.6"/>',
  "key":'<circle cx="8.2" cy="8.2" r="3.6"/><path d="m10.8 10.8 8 8"/><path d="m15.6 15.6 2-2M17.8 17.8l2-2"/>',
  "layers":'<path d="m12 3.6 8.4 4.2-8.4 4.2-8.4-4.2z"/><path d="m3.6 12 8.4 4.2 8.4-4.2"/><path d="m3.6 16.2 8.4 4.2 8.4-4.2"/>',
+ "refresh":'<path d="M20.2 11.4a8.2 8.2 0 0 0-14.4-4"/><path d="M3.8 12.6a8.2 8.2 0 0 0 14.4 4"/><path d="M5.4 3.6v3.8h3.8"/><path d="M18.6 20.4v-3.8h-3.8"/>',
  "merge":'<path d="M5.4 4.2v4.2c0 2 1.6 3.6 3.6 3.6h6"/><path d="M5.4 19.8v-4.2c0-2 1.6-3.6 3.6-3.6h6"/><path d="m15.6 8.4 3.6 3.6-3.6 3.6"/>',
  "quote":'<path d="M9.6 6.6c-2.8 1-4.4 3.3-4.4 6.3v4.5h5.6v-5.6H8c0-1.7.7-2.9 2.2-3.6z"/><path d="M19.2 6.6c-2.8 1-4.4 3.3-4.4 6.3v4.5h5.6v-5.6h-2.8c0-1.7.7-2.9 2.2-3.6z"/>',
  "q":'<circle cx="12" cy="12" r="8.4"/><path d="M9.7 9.5a2.4 2.4 0 1 1 3.2 2.3c-.6.2-.9.8-.9 1.4v.5"/><path d="M12 16.6h.02" stroke-width="2.6"/>',
@@ -216,9 +218,9 @@ def topbar(active):
             '</div></div></div></header>' % (logo(), links, icon("phone")))
 
 DISCLAIMER = ('הר-אל פתרונות מימון חכמים (<span class="ph">[שם החברה הרשומה]</span> בע״מ) · '
-              'ח.פ. <span class="ph">[מספר]</span> · בעל רישיון למתן שירותי אשראי מטעם רשות שוק ההון, '
+              'ח.פ. <span class="ph">[מספר]</span> · בעלת רישיון למתן שירותי אשראי מטעם רשות שוק ההון, '
               'הביטוח והחיסכון, רישיון מס׳ <span class="ph">[מספר רישיון]</span>. '
-              'אי־עמידה בפירעון ההלוואה עלולה לגרור חיוב בריבית פיגורים והליכי הוצאה לפועל. '
+              'אי עמידה בפירעון ההלוואה או בהחזר האשראי עלול לגרור חיוב בריבית פיגורים והליכי הוצאה לפועל. '
               'האמור באתר הוא מידע כללי בלבד ואינו מהווה ייעוץ, הצעה או התחייבות למתן אשראי; '
               'אישור ההלוואה, סכומה, הריבית ותנאיה נתונים לשיקול דעתו הבלעדי של הגוף המממן וכפופים להסכם חתום.')
 
@@ -230,7 +232,7 @@ def footer():
             '<div class="foot-top">'
             '<div class="foot-col">%s'
             '<p class="foot-blurb">מלווים משפחות ועסקים בישראל מול הבנקים והגופים החוץ-בנקאיים — '
-            'עד שהמימון הנכון נמצא.</p></div>'
+            'עד שנמצה עבורכם את האפשרויות.</p></div>'
             '%s%s%s'
             '</div>'
             '<p class="disclaimer">%s</p>'
@@ -239,7 +241,7 @@ def footer():
             % (logo(26, 34, ".64rem"),
                col("פתרונות מימון", ["משכנתאות", "הלוואות רכב", "מימון לעסקים", "הלוואות לכל מטרה"]),
                col("החברה", ["אודות הר-אל", "הצוות", "תהליך העבודה", "שאלות נפוצות"]),
-               col("יצירת קשר", ["[טלפון]", "[אימייל]", "וואטסאפ", "משה דיין 10, פתח תקווה"]),
+               col("יצירת קשר", ['<span class="ph">[טלפון]</span>', '<span class="ph">[אימייל]</span>', "וואטסאפ", "משה דיין 10, פתח תקווה"]),
                DISCLAIMER))
 
 # ---------------------------------------------------------------- page shell

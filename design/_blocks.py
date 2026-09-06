@@ -82,7 +82,8 @@ def terms_strip(items, note):
             '</div></section>' % (tr, note))
 
 
-def cta_band(title, sub, cta="לבדיקת זכאות ללא עלות"):
+def cta_band(title, sub, cta="לבדיקת זכאות ללא עלות",
+             note="הבדיקה אינה כרוכה בתשלום ואינה מחייבת אתכם בדבר."):
     return ('<section style="position:relative;overflow:hidden;padding-block:62px;'
             'background:radial-gradient(90%% 70%% at 50%% 0,rgba(43,182,170,.14),transparent 60%%),#061A22">'
             '<div class="wrap" style="text-align:center">'
@@ -92,5 +93,5 @@ def cta_band(title, sub, cta="לבדיקת זכאות ללא עלות"):
             '<a href="#" class="btn btn-primary">%s</a>'
             '<a href="#" class="btn btn-wa">%s לשיחה בוואטסאפ</a></div>'
             '<p style="font-size:.82rem;color:rgba(244,241,234,.42);margin-top:16px">'
-            'הבדיקה אינה כרוכה בתשלום ואינה מחייבת אתכם בדבר.</p>'
-            '</div></section>' % (title, sub, cta, wa_icon()))
+            '%s</p>'
+            '</div></section>' % (title, sub, cta, wa_icon(), note))
