@@ -548,7 +548,7 @@ const OSH = (() => {
       if (!this.P.fee && (sc.deltas || []).length) notes.push("לא הוגדרה עמלת ערוץ ישיר: העמלה נשארה כפי שנרשמה בפועל");
       const counts = Engine.counts(rows);
       const removed = rows.filter(r => r.origin === "removed");
-      const live = rows.filter(r => r.origin !== "removed").sort((a, b) => a.date.localeCompare(b.date) || (a.origin === "historical" ? 0 : 1) - (b.origin === "historical" ? 0 : 1) || a.seq - b.seq);
+      const live = rows.filter(r => r.origin !== "removed").sort((a, b) => a.date.localeCompare(b.date) || (a.tid ? 0 : 1) - (b.tid ? 0 : 1) || a.seq - b.seq);
       const by = {}; for (const r of live) (by[r.date] = by[r.date] || []).push(r);
       const days = [], daily = {}; let bal = this.opening, accRun = 0n, accHist = 0n; const den = DEN(this.P);
       for (let d = start; d <= end; d = addDays(d, 1)) {

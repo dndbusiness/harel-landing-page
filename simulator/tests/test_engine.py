@@ -243,3 +243,9 @@ def test_set_to_single_day(loaded, params):
     hit = [r for r in out.scenario.rows() if r.origin == "modified"]
     assert [(r.date, r.amount) for r in hit] == [(date(2026, 8, 10), 1500000)]
     assert out.scenario.closing - out.base.closing == 1500000 - hit[0].base_amount
+
+
+def test_modified_row_keeps_its_place_in_the_day(loaded, params):
+    """שינוי סכום לא מזיז את התנועה בתוך היום — הדף המדומה נשאר באותו סדר כמו המקור."""
+    out = run(loaded, params, ChangeAmount(Selector(description="משכנתא"), pct=Decimal(5), label="x"))
+    assert [r.txn_id for r in out.scenario.rows()] == [t.id for t in loaded.txns]

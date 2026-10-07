@@ -286,7 +286,7 @@ class Engine:
         counts = self._direct_counts(rows)
         removed = [r for r in rows if r.origin == "removed"]
         live = sorted((r for r in rows if r.origin != "removed"),
-                      key=lambda r: (r.date, 0 if r.origin == "historical" else 1, r.seq))
+                      key=lambda r: (r.date, 0 if r.txn_id else 1, r.seq))   # שורה מהדף שומרת על מקומה גם אחרי שינוי
         by_day: dict[date, list[SimRow]] = defaultdict(list)
         for r in live:
             by_day[r.date].append(r)
