@@ -1,0 +1,8 @@
+# נתוני לקוחות — לעולם לא במאגר
+data/
+*.pdf
+*.xlsx
+*.enc
+access.log
+out/
+.pytest_cache/

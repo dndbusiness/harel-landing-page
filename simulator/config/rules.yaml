@@ -1,0 +1,114 @@
+# כללי קטגוריה התחלתיים. עדיפות גבוהה נבדקת קודם; הכלל הראשון שמתאים קובע.
+# הביטויים נכתבו לפי ניסוחים נפוצים בדפי עו"ש ועדיין לא אומתו מול הדף האמיתי —
+# אחרי הקליטה הראשונה עוברים על תור האישור ומתקנים כאן.
+#
+# שדות: description/reference = regex | min/max = ערך מוחלט בש"ח | direction = credit/debit/any
+# kind = סימון מיוחד למנוע: direct_channel_fee / interest / card_charge
+rules:
+  # --- עמלות וריבית (המנוע מחשב אותן מחדש בתרחיש) ---
+  - id: fee-direct-channel
+    priority: 900
+    category: עמלות וריבית
+    subcategory: עמלת ערוץ ישיר
+    description: "עמל.*(ישיר|אינטרנט|ערוץ)"
+    direction: debit
+    kind: direct_channel_fee
+  - id: interest-debit
+    priority: 890
+    category: עמלות וריבית
+    subcategory: ריבית חובה
+    description: "ריבית"
+    direction: debit
+    kind: interest
+  - id: interest-credit
+    priority: 890
+    category: עמלות וריבית
+    subcategory: ריבית זכות
+    description: "ריבית"
+    direction: credit
+    kind: interest
+  - id: fee-other
+    priority: 100
+    category: עמלות וריבית
+    subcategory: עמלות אחרות
+    description: "עמל"
+    direction: debit
+
+  # --- הכנסות ---
+  - id: salary
+    priority: 500
+    category: הכנסות
+    subcategory: משכורת
+    description: "משכורת|שכר"
+    direction: credit
+  - id: nii
+    priority: 500
+    category: הכנסות
+    subcategory: קצבאות
+    description: "ביטוח לאומי|בטוח לאומי|קצב"
+    direction: credit
+  - id: tax-refund
+    priority: 500
+    category: הכנסות
+    subcategory: החזרי מס
+    description: "מס הכנסה|החזר מס"
+    direction: credit
+  - id: pension-withdrawal
+    priority: 500
+    category: הכנסות
+    subcategory: משיכות פנסיה
+    description: "פנסי|גמל|השתלמות"
+    direction: credit
+
+  # --- התחייבויות ---
+  - id: mortgage
+    priority: 400
+    category: דיור/משכנתה
+    subcategory: משכנתה
+    description: "משכנת|טפחות.*הלוו|החזר משכ"
+    direction: debit
+  - id: rent
+    priority: 390
+    category: דיור/משכנתה
+    subcategory: שכירות
+    description: "שכ\"ד|שכר דירה|שכירות"
+    direction: debit
+  - id: loan
+    priority: 380
+    category: הלוואות
+    subcategory: החזר הלוואה
+    description: "הלוו|פרעון|פירעון"
+    direction: debit
+  - id: insurance
+    priority: 370
+    category: ביטוחים
+    description: "ביטוח|הראל|מגדל|כלל|הפניקס|מנורה|איילון|ביטוח ישיר"
+    direction: debit
+
+  # --- כרטיסי אשראי: סכום עטוף, לא הוצאה (ראו סעיף 6) ---
+  - id: card-charge
+    priority: 360
+    category: כרטיסי אשראי
+    subcategory: חיוב מרוכז
+    description: "ישראכרט|כאל|ויזה|מקס|לאומי קארד|אמריקן|דיינרס|כרטיס"
+    direction: debit
+    kind: card_charge
+
+  # --- מזומן והעברות ---
+  - id: cash
+    priority: 300
+    category: מזומן
+    description: "מזומן|כספומט|משיכה"
+    direction: debit
+  - id: transfer-out
+    priority: 200
+    category: העברות
+    subcategory: העברה יוצאת
+    description: "העברה|העב'|ביט|פייבוקס|bit"
+    direction: debit
+  - id: transfer-in
+    priority: 200
+    category: העברות
+    subcategory: העברה נכנסת
+    description: "העברה|העב'|ביט|פייבוקס|bit|הפקדה"
+    direction: credit

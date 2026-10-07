@@ -1,0 +1,9 @@
+name: העלאת שכר 10% מיולי
+mode: replay
+description: מה היה קורה אילו המשכורת נטו הייתה גבוהה ב-10% החל מ-01/07
+deltas:
+  - type: change_amount
+    label: שכר +10%
+    select: {category: הכנסות, subcategory: משכורת}
+    pct: 10
+    start: 2026-07-01
