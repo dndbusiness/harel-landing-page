@@ -119,6 +119,7 @@ class MizrahiOshParser:
     def parse(self, path: str | Path) -> Statement:
         path = Path(path)
         display_rows: list[dict] = []     # לפי סדר התצוגה (מהחדש לישן)
+        account_hint = period_label = ""
         centers: dict[str, float] | None = None
         reversed_text = False
 
@@ -127,6 +128,14 @@ class MizrahiOshParser:
             hdr = self._detect_header(rows)
             if hdr is not None:
                 idx, centers, reversed_text = hdr
+                if pno == 1:
+                    # ראש הדף: מספר חשבון (נשמר רק כדי להציג אותו מוסתר) ושורת התקופה
+                    for line in (self._line_text(r, reversed_text) for r in rows[:idx]):
+                        m = re.search(r"חשבון מספר\s*([\d\-]{6,})", line)
+                        if m and not account_hint:
+                            account_hint = m.group(1)
+                        if "תנועות בחשבון מתאריך" in line and not period_label:
+                            period_label = line
                 rows = rows[idx + 1:]
             elif centers is None:
                 continue  # עמוד שער/סיכום לפני הטבלה
@@ -152,7 +161,8 @@ class MizrahiOshParser:
         txns = [self._to_txn(r, path.name) for r in display_rows]
         txns = days_newest_first_to_chronological(txns)
         assign_occurrence_indices(txns)
-        return Statement(source_file=path.name, transactions=txns)
+        return Statement(source_file=path.name, transactions=txns, account_hint=account_hint,
+                         period_label=period_label)
 
     @staticmethod
     def _to_txn(r: dict, source: str) -> Transaction:

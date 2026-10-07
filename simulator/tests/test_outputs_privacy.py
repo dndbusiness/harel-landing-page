@@ -102,3 +102,15 @@ def test_compare_rows_and_page(loaded, run_out):
     h = compare_html(loaded.txns, loaded.report.opening_agorot, run_out.scenario, "12-345-678901")
     assert "דף אמיתי" in h and "דף חדש" in h and WATERMARK in h and "678901" not in h
     assert h.count('class="changed') == len(changed)
+
+
+def test_replica_marks_every_change(loaded, run_out):
+    from oshsim.outputs.compare import compare_rows
+    from oshsim.outputs.replica import replica_html
+    h = replica_html(loaded.txns, loaded.report.opening_agorot, run_out.scenario, "511-237920", "תקופה לבדיקה")
+    rows = compare_rows(loaded.txns, loaded.report.opening_agorot, run_out.scenario)
+    changed = sum(r.status == "changed" for r in rows)
+    bal_changed = sum(1 for r in rows if r.day_end and r.new_balance != r.old_balance)
+    assert h.count('class="amt chg"') == changed and h.count('class="bal balchg"') == bal_changed
+    assert WATERMARK in h and "237920" not in h and "7920" in h and "תקופה לבדיקה" in h
+    assert "מזרחי" not in h and "טפחות" not in h.split("<tbody>")[0]   # בלי שם הבנק בכותרת

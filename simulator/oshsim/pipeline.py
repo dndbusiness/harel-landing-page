@@ -26,6 +26,7 @@ class Loaded:
     queue: list[QueueItem]
     log: list[str] = field(default_factory=list)
     account_hint: str = ""
+    period_label: str = ""
 
 
 def rules_for(client_dir: Path | None):
@@ -56,7 +57,8 @@ def ingest(files: list[str | Path], client_dir: Path | None = None) -> Loaded:
     cat = categorize(merged.transactions, rules_for(client_dir))
     log.append(f"קטגוריזציה: {cat.matched} סווגו לפי כללים, {len(cat.queue)} בתור אישור")
     hint = next((s.account_hint for s in statements if s.account_hint), "")
-    return Loaded(merged.transactions, report, cat.queue, log, hint)
+    period = statements[0].period_label if len(statements) == 1 else ""
+    return Loaded(merged.transactions, report, cat.queue, log, hint, period)
 
 
 def describe_delta(d: Delta) -> str:

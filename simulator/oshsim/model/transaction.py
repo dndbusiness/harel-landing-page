@@ -64,6 +64,7 @@ class Statement:
     source_file: str
     transactions: list[Transaction] = field(default_factory=list)
     account_hint: str = ""     # מספר חשבון כפי שנקרא — נשמר רק מוסתר בפלטים
+    period_label: str = ""     # שורת התקופה כפי שמופיעה בראש הדף
 
     @property
     def start(self) -> date:

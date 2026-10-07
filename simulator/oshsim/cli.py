@@ -35,9 +35,13 @@ def _load(ws: Workspace):
     return [Transaction.from_dict(t) for t in d["transactions"]], d["opening"], d.get("log", []), d.get("account_hint", "")
 
 
-def _save(ws: Workspace, txns, opening, log, hint=""):
+def _period(ws: Workspace) -> str:
+    return ws.read_json("ledger.json").get("period_label", "")
+
+
+def _save(ws: Workspace, txns, opening, log, hint="", period=""):
     ws.write_json("ledger.json", {"opening": opening, "transactions": [t.to_dict() for t in txns],
-                                  "log": log, "account_hint": hint})
+                                  "log": log, "account_hint": hint, "period_label": period})
 
 
 def cmd_inspect(args):
@@ -55,7 +59,7 @@ def cmd_ingest(args):
     except ValidationError as e:
         print("הדף לא מתיישב — עצירה.\n" + str(e), file=sys.stderr)
         return 2
-    _save(ws, loaded.txns, loaded.report.opening_agorot, loaded.log, loaded.account_hint)
+    _save(ws, loaded.txns, loaded.report.opening_agorot, loaded.log, loaded.account_hint, loaded.period_label)
     ws.write_json("queue.json", [asdict(q) for q in loaded.queue])
     print("\n".join(loaded.log))
     if loaded.queue:
@@ -77,7 +81,7 @@ def cmd_review(args):
         print(f"נשמר כלל {rule.id}: '{rule.description}' → {cat}")
         txns, opening, log, hint = _load(ws)
         res = categorize(txns, rules_for(Path(args.client)))
-        _save(ws, txns, opening, log, hint)
+        _save(ws, txns, opening, log, hint, _period(ws))
         ws.write_json("queue.json", [asdict(q) for q in res.queue])
         queue = res.queue
     for q in queue:
@@ -108,6 +112,7 @@ def cmd_patterns(args):
 def cmd_simulate(args):
     from .outputs.excel import verify_with_libreoffice, write_excel
     from .outputs.compare import compare_html
+    from .outputs.replica import replica_html
     from .outputs.html import html_to_pdf, report_html, statement_html
     from .pipeline import run_scenario
     ws = _ws(args)
@@ -131,14 +136,16 @@ def cmd_simulate(args):
     problems = verify_with_libreoffice(xlsx, check) if not args.no_recalc else ["חישוב מחדש דולג (--no-recalc)"]
     st = od / f"{slug}_statement.html"
     st.write_text(statement_html(out.scenario, hint), encoding="utf-8")
+    rpl = od / f"{slug}_replica.html"
+    rpl.write_text(replica_html(txns, opening, out.scenario, hint, _period(ws)), encoding="utf-8")
     cp = od / f"{slug}_compare.html"
     cp.write_text(compare_html(txns, opening, out.scenario, hint), encoding="utf-8")
     rp = od / f"{slug}_report.html"
     rp.write_text(report_html(out.base, out.scenario, params.credit_limit_agorot, out.scenario_lines), encoding="utf-8")
-    for p in (xlsx, st, cp, rp):
+    for p in (xlsx, st, rpl, cp, rp):
         ws.log("write", p.name)
     if args.pdf:
-        for src, name in ((st, f"{slug}_statement.pdf"), (cp, f"{slug}_compare.pdf")):
+        for src, name in ((st, f"{slug}_statement.pdf"), (rpl, f"{slug}_replica.pdf"), (cp, f"{slug}_compare.pdf")):
             if html_to_pdf(src, od / name):
                 ws.log("write", name)
 
