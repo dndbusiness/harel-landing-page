@@ -45,6 +45,9 @@ python3 -m oshsim purge    --client data/client1 --yes                   # מח�
 `ingest` עוצר עם דוח פערים (יום, צפוי, בפועל, הפרש) אם הדף לא מתיישב. `simulate`
 מריץ קודם תרחיש ריק ועוצר אם הוא לא זהה לדף לאגורה, ורק אז מריץ את התרחיש.
 
+`simulate` כותב גם `<תרחיש>_compare.html`: הדף האמיתי והדף החדש זה לצד זה, שורה מול שורה,
+עם הדגשת שינויים, יתרה רצה בשני הצדדים ועמודת הפרש ביתרה (ועם `--pdf` גם PDF לרוחב).
+
 כש-PDF של בנק לא נשלף נכון: `python3 -m oshsim inspect file.pdf` מציג את המילים
 והעמודות שזוהו. אפשר גם להזין תנועות ב-CSV (`date,value_date,description,amount,balance,reference,channel`),
 והן עוברות את אותה ולידציה.

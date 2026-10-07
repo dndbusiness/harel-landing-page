@@ -107,6 +107,7 @@ def cmd_patterns(args):
 
 def cmd_simulate(args):
     from .outputs.excel import verify_with_libreoffice, write_excel
+    from .outputs.compare import compare_html
     from .outputs.html import html_to_pdf, report_html, statement_html
     from .pipeline import run_scenario
     ws = _ws(args)
@@ -130,12 +131,16 @@ def cmd_simulate(args):
     problems = verify_with_libreoffice(xlsx, check) if not args.no_recalc else ["חישוב מחדש דולג (--no-recalc)"]
     st = od / f"{slug}_statement.html"
     st.write_text(statement_html(out.scenario, hint), encoding="utf-8")
+    cp = od / f"{slug}_compare.html"
+    cp.write_text(compare_html(txns, opening, out.scenario, hint), encoding="utf-8")
     rp = od / f"{slug}_report.html"
     rp.write_text(report_html(out.base, out.scenario, params.credit_limit_agorot, out.scenario_lines), encoding="utf-8")
-    for p in (xlsx, st, rp):
+    for p in (xlsx, st, cp, rp):
         ws.log("write", p.name)
-    if args.pdf and html_to_pdf(st, od / f"{slug}_statement.pdf"):
-        ws.log("write", f"{slug}_statement.pdf")
+    if args.pdf:
+        for src, name in ((st, f"{slug}_statement.pdf"), (cp, f"{slug}_compare.pdf")):
+            if html_to_pdf(src, od / name):
+                ws.log("write", name)
 
     b, s = out.base, out.scenario
     print(f"תרחיש: {s.name} ({s.mode})")

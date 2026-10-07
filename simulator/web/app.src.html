@@ -108,6 +108,29 @@ svg.chart text{fill:var(--muted);font:11px var(--f-num)}
 .stmt .wm{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
 .stmt .wm span{transform:rotate(-24deg);font-size:clamp(28px,7vw,76px);font-weight:800;color:var(--wm);white-space:nowrap}
 .stmt .flag{border:2px solid var(--neg);color:var(--neg);font-weight:800;text-align:center;padding:7px;border-radius:6px}
+.sw{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:-1px;margin-inline-end:3px;border:1px solid var(--line)}
+:root{--add:#E2F4EE;--del:#FBE4E1;--old:#5B6B73}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--add:#0F3A32;--del:#3D1A17;--old:#A9B8BE}}
+:root[data-theme="dark"]{--add:#0F3A32;--del:#3D1A17;--old:#A9B8BE}
+.cmpwrap{overflow:auto;max-height:calc(100vh - 300px);min-height:320px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+#cmpTable{border-collapse:separate;border-spacing:0}
+#cmpTable thead th{position:sticky;z-index:2}
+#cmpTable thead tr.g th{top:0;text-align:center;color:var(--ink);font-size:.85rem}
+#cmpTable thead tr.c th{top:31px}
+#cmpTable .o{background:color-mix(in srgb,var(--old) 6%,transparent)}
+#cmpTable .w{background:color-mix(in srgb,var(--accent) 7%,transparent)}
+#cmpTable .sep{border-inline-start:2px solid var(--line)}
+#cmpTable td.desc{white-space:normal;min-width:160px}
+#cmpTable tr.dayend td{border-bottom:2px solid var(--line)}
+#cmpTable tr.dayend td.bal{font-weight:700}
+#cmpTable td.bal.mid{color:var(--muted)}
+#cmpTable tr.changed td{background:var(--mark)}
+#cmpTable tr.changed td.amt.w{font-weight:700;color:var(--gold)}
+#cmpTable tr.added td{background:var(--add)}
+#cmpTable tr.removed td{background:var(--del)}
+#cmpTable tr.removed td.desc{text-decoration:line-through}
+#cmpTable td.gap.up{color:var(--pos);font-weight:700} #cmpTable td.gap.down{color:var(--neg);font-weight:700} #cmpTable td.gap.zero{color:var(--muted)}
+body.only-changes #cmpTable tr.quiet{display:none}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
 
@@ -124,7 +147,8 @@ svg.chart text{fill:var(--muted);font:11px var(--f-num)}
       <button role="tab" data-t="params"><span class="k">3</span>פרמטרים</button>
       <button role="tab" data-t="scenario"><span class="k">4</span>תרחיש</button>
       <button role="tab" data-t="results"><span class="k">5</span>תוצאות</button>
-      <button role="tab" data-t="statement"><span class="k">6</span>דף מדומה</button>
+      <button role="tab" data-t="compare"><span class="k">6</span>אמיתי מול חדש</button>
+      <button role="tab" data-t="statement"><span class="k">7</span>דף מדומה</button>
     </nav>
   </div>
 </header>
@@ -228,6 +252,16 @@ svg.chart text{fill:var(--muted);font:11px var(--f-num)}
     <div id="results"></div>
   </section>
 
+  <!-- השוואה -->
+  <section class="panel" data-p="compare" hidden>
+    <div id="cmpCards" class="stats"></div>
+    <div class="row small">
+      <label class="row" style="gap:6px"><input type="checkbox" id="onlyChanges"> רק ימים עם שינוי</label>
+      <span class="muted"><span class="sw" style="background:var(--mark)"></span>סכום שונה · <span class="sw" style="background:var(--add)"></span>נוספה · <span class="sw" style="background:var(--del)"></span>בוטלה · יתרה מודגשת = יתרת סוף יום · הפרש = יתרה רצה בחדש פחות באמיתי</span>
+    </div>
+    <div class="cmpwrap"><table id="cmpTable"></table></div>
+  </section>
+
   <!-- 6 -->
   <section class="panel" data-p="statement" hidden>
     <div class="row"><button class="btn" id="dlHtml">שמירת הדף המדומה (HTML)</button><span class="muted small" id="dlNote2"></span></div>
@@ -259,7 +293,7 @@ function showTab(t) {
 }
 $("#tabs").addEventListener("click", e => { const b = e.target.closest("button"); if (b && !b.disabled) showTab(b.dataset.t); });
 function lockTabs(ok) { $$("#tabs button").forEach(b => { if (b.dataset.t !== "ingest") b.disabled = !ok; }); }
-function lockResults(ok) { $$("#tabs button").forEach(b => { if (b.dataset.t === "results" || b.dataset.t === "statement") b.disabled = !ok || !S.txns; }); }
+function lockResults(ok) { $$("#tabs button").forEach(b => { if (["results", "statement", "compare"].includes(b.dataset.t)) b.disabled = !ok || !S.txns; }); }
 
 // ---------- ingest ----------
 async function pdfWords(buf) {
@@ -505,7 +539,7 @@ function run(jump) {
     if (id.length) throw new Error("הסימולטור לא משחזר את הדף, ולכן אסור להריץ תרחישים: " + id.slice(0, 3).join("; "));
     const base = eng.run({ name: "בסיס", mode: sc.mode, months: sc.months, deltas: [] }), scen = eng.run(sc);
     S.out = { base, scen, P, lines: deltas.map(d => d.label), eng };
-    renderResults(); renderStatement(); lockResults(true);
+    renderResults(); renderStatement(); renderCompare(); lockResults(true);
     msg.innerHTML = `<span class="pill ok">שחזור הדף זהה לאגורה</span>`;
     if (jump) showTab("results");
   } catch (e) { msg.className = "small neg"; msg.textContent = e.message; }
@@ -590,6 +624,53 @@ function statementDoc() {
   <div class="flag">${WM}</div><h1 style="font-size:20px;margin:0 0 4px">סימולציית תנועות בחשבון: ${h(s.name)}</h1><p class="muted">${OSH.dmy(s.start)}–${OSH.dmy(s.end)}</p>
   ${statementTable(s).replace(/<span class="num ([a-z]*)">/g, '<span class="$1">')}<p class="muted">✱ סכום שונה בתרחיש · ＋ תנועה שנוספה · ~ חושב או הוקרן (הערכה). הופק בכלי סימולציה ואינו דף חשבון.</p></main></body></html>`;
 }
+
+// ---------- real vs new ----------
+function compareRows() {
+  const scen = S.out.scen, rows = OSH.rowsOfRes(scen), byTid = new Map(rows.filter(r => r.tid).map(r => [r.tid, r]));
+  const removed = new Set(scen.removed.map(r => r.tid).filter(Boolean)), added = {};
+  rows.filter(r => !r.tid).forEach(r => (added[r.date] = added[r.date] || []).push(r));
+  const byDay = {}; S.txns.forEach(t => (byDay[t.date] = byDay[t.date] || []).push(t));
+  const lastHist = S.txns[S.txns.length - 1].date, out = [];
+  let ob = S.rep.opening, nb = S.rep.opening;
+  for (const d of [...new Set([...Object.keys(byDay), ...Object.keys(added)])].sort()) {
+    const day = [];
+    for (const t of byDay[d] || []) {
+      ob += t.amt;
+      if (removed.has(t.id)) { day.push({ d, desc: t.desc, ch: t.ch, ref: t.ref, oa: t.amt, na: null, ob, nb, st: "removed", note: "בוטלה בתרחיש" }); continue; }
+      const r = byTid.get(t.id), a = r ? r.amt : t.amt; nb += a;
+      day.push({ d, desc: t.desc, ch: t.ch, ref: r ? r.ref : t.ref, oa: t.amt, na: a, ob, nb, st: a === t.amt ? "same" : "changed", note: a === t.amt ? "" : (r?.note || "") });
+    }
+    for (const r of added[d] || []) { nb += r.amt; day.push({ d, desc: r.desc, ch: r.ch, ref: r.ref, oa: null, na: r.amt, ob: d <= lastHist ? ob : null, nb, st: ["projected", "fee", "interest"].includes(r.origin) ? "projected" : "added", note: r.note }); }
+    if (day.length) day[day.length - 1].end = true;
+    out.push(...day);
+  }
+  return out;
+}
+function renderCompare() {
+  const rows = compareRows(), gap = r => (r.nb ?? 0) - (r.ob ?? 0);
+  const changedDays = new Set(rows.filter(r => r.st !== "same" || gap(r) !== 0).map(r => r.d));
+  const tag = { changed: "שונה", added: "נוספה", removed: "בוטלה", projected: "הקרנה" };
+  const byDay = {}; rows.forEach(r => (byDay[r.d] = byDay[r.d] || []).push(r));
+  const body = Object.keys(byDay).sort().reverse().flatMap(d => byDay[d].map(r => {
+    const g = gap(r), gc = g > 0 ? "up" : g < 0 ? "down" : "zero", bal = r.end ? "bal" : "bal mid";
+    return `<tr class="${r.st}${r.end ? " dayend" : ""}${changedDays.has(d) ? "" : " quiet"}"><td>${OSH.dmyShort(d)}</td>
+      <td class="desc">${r.ch === "direct" ? "(י) " : r.ch === "banker" ? "(פ) " : ""}${h(r.desc)}${tag[r.st] ? ` <span class="pill ${r.st === "changed" ? "est" : ""}">${tag[r.st]}</span>` : ""}${r.note ? `<div class="muted small">${h(r.note)}</div>` : ""}</td>
+      <td class="n o amt sep">${r.oa != null ? money(r.oa) : ""}</td><td class="n o ${bal}">${r.oa != null ? money(r.ob) : ""}</td>
+      <td class="n w amt sep">${r.na != null ? money(r.na) : ""}</td><td class="n w ${bal}">${r.na != null || r.st === "removed" ? money(r.nb) : ""}</td>
+      <td class="n gap sep ${gc}">${g ? (g > 0 ? "+" : "") + OSH.fmt(g) : "0.00"}</td><td class="n">${h(r.ref)}</td></tr>`;
+  })).join("");
+  $("#cmpTable").innerHTML = `<thead><tr class="g"><th colspan="2"></th><th class="o sep" colspan="2">דף אמיתי</th><th class="w sep" colspan="2">דף חדש (סימולציה)</th><th class="sep" colspan="2"></th></tr>
+    <tr class="c"><th>תאריך</th><th>סוג תנועה</th><th class="o sep">זכות/חובה</th><th class="o">יתרה רצה</th><th class="w sep">זכות/חובה</th><th class="w">יתרה רצה</th><th class="sep">הפרש ביתרה</th><th>אסמכתה</th></tr></thead><tbody>${body}</tbody>`;
+  const oc = [...rows].reverse().find(r => r.ob != null).ob, nc = rows[rows.length - 1].nb;
+  const eod = rows.filter(r => r.end), same = eod.filter(r => gap(r) === 0).length;
+  const up = rows.reduce((a, r) => gap(r) > gap(a) ? r : a, rows[0]), down = rows.reduce((a, r) => gap(r) < gap(a) ? r : a, rows[0]);
+  const card = (k, v, d) => `<div class="stat"><span class="k">${k}</span><span class="v">${v}</span><span class="d">${d || ""}</span></div>`;
+  $("#cmpCards").innerHTML = card("סגירה, דף אמיתי", money(oc)) + card("סגירה, דף חדש", money(nc), `הפרש ${(nc - oc > 0 ? "+" : "") + OSH.fmt(nc - oc)}`) +
+    card("תנועות ששונו", rows.filter(r => r.st !== "same").length, `מתוך ${rows.length}`) + card("ימים עם אותה יתרת סוף יום", `${same} / ${eod.length}`) +
+    card("פער יתרה גבוה ביותר", gap(up) > 0 ? money(gap(up)) : "0.00", gap(up) > 0 ? OSH.dmy(up.d) : "") + card("פער יתרה נמוך ביותר", gap(down) < 0 ? money(gap(down)) : "0.00", gap(down) < 0 ? OSH.dmy(down.d) : "");
+}
+$("#onlyChanges").addEventListener("change", e => document.body.classList.toggle("only-changes", e.target.checked));
 
 // ---------- Excel ----------
 function buildWorkbook() {

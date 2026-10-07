@@ -83,3 +83,22 @@ def test_workspace_encryption_and_purge(tmp_path, monkeypatch):
         Workspace(tmp_path / "c").read_json("ledger.json")
     assert Workspace(tmp_path / "c").purge() >= 2
     assert not (tmp_path / "c").exists()
+
+
+def test_compare_rows_and_page(loaded, run_out):
+    from oshsim.outputs.compare import compare_html, compare_rows
+    rows = compare_rows(loaded.txns, loaded.report.opening_agorot, run_out.scenario)
+    assert len(rows) == len(loaded.txns)
+    changed = [r for r in rows if r.status == "changed"]
+    # המשכורות שונו, ושורת הריבית הותאמה ליתרה הגבוהה יותר
+    assert changed and all("משכורת" in r.description or "ריבית" in r.description for r in changed)
+    assert any("משכורת" in r.description for r in changed)
+    # יתרה רצה בכל צד, ובסוף כל יום — יתרת הדף / יתרת התרחיש
+    for r, t in zip(rows, loaded.txns):
+        if t.day_balance_agorot is not None:
+            assert r.day_end and r.old_balance == t.day_balance_agorot
+            assert r.new_balance == run_out.scenario.daily_balance[t.date]
+    assert rows[-1].balance_gap == run_out.scenario.closing - run_out.base.closing
+    h = compare_html(loaded.txns, loaded.report.opening_agorot, run_out.scenario, "12-345-678901")
+    assert "דף אמיתי" in h and "דף חדש" in h and WATERMARK in h and "678901" not in h
+    assert h.count('class="changed') == len(changed)
