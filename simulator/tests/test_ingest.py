@@ -82,3 +82,12 @@ def test_overlapping_files_merge(tmp_path, synthetic):
     same = [t for t in m.transactions if t.date == date(2026, 7, 6) and t.reference == "55555"]
     assert len(same) == 2
     assert validate(m.transactions).ok
+
+
+def test_balance_row_is_last_of_its_day(synthetic):
+    """בדף היתרה בשורה האחרונה של כל יום; אחרי ההמרה לכרונולוגי היא חייבת להישאר אחרונה ביומה."""
+    for st in (MizrahiOshParser().parse(synthetic["pdf"]), parse_csv(synthetic["csv"])):
+        txns = st.transactions
+        for i, t in enumerate(txns):
+            if t.day_balance_agorot is not None:
+                assert i + 1 == len(txns) or txns[i + 1].date != t.date

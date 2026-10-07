@@ -91,6 +91,7 @@ class Delta:
 class ChangeAmount(Delta):
     """שכר גבוה/נמוך, הוצאה גבוהה/נמוכה בקטגוריה או מנפיק.
     pct: אחוז שינוי בגודל (10 = +10%). amount: ₪ שמתווספים לגודל כל שורה.
+    set_to: ₪ — הגודל החדש של כל שורה שנבחרה (הסימן נשמר: זכות נשארת זכות).
     basis='gross': pct/amount חלים על ברוטו `gross_monthly`; ההפרש בנטו מחושב במודול המס.
     """
     select: Selector
@@ -102,10 +103,13 @@ class ChangeAmount(Delta):
     gross_monthly: Optional[int] = None
     credit_points: Optional[Decimal] = None
     label: str = ""
+    set_to: Optional[int] = None
 
     def apply(self, rows, ctx):
-        if (self.pct is None) == (self.amount is None):
-            raise ValueError(f"{self.label}: צריך pct או amount (אחד בלבד)")
+        if sum(x is not None for x in (self.pct, self.amount, self.set_to)) != 1:
+            raise ValueError(f"{self.label}: צריך pct, amount או set_to (אחד בלבד)")
+        if self.set_to is not None and self.basis == "gross":
+            raise ValueError(f"{self.label}: set_to הוא סכום נטו בדף, לא ברוטו")
         net_delta = None
         if self.basis == "gross":
             if self.gross_monthly is None:
@@ -122,7 +126,9 @@ class ChangeAmount(Delta):
             if r.origin != "removed" and self.select.matches(r) and _in_range(r.date, self.start, self.end):
                 sign = 1 if r.amount >= 0 else -1
                 mag = abs(r.amount)
-                if net_delta is not None:
+                if self.set_to is not None:
+                    new_mag = abs(self.set_to)
+                elif net_delta is not None:
                     new_mag = mag + net_delta
                 elif self.pct is not None:
                     new_mag = scale(mag, 1 + self.pct / 100)
@@ -287,8 +293,11 @@ def delta_from_dict(d: dict, base_dir: Path) -> Delta:
     sel = Selector(**(d.get("select") or {}))
     ch = DIRECT if d.get("channel") == "direct" else d.get("channel")
     if t == "change_amount":
-        return ChangeAmount(sel, _pct(d.get("pct")), _money(d.get("amount")), _d(d.get("start")), _d(d.get("end")),
-                            d.get("basis", "net"), _money(d.get("gross_monthly")), _pct(d.get("credit_points")), label)
+        # date: קיצור לשינוי בתנועות של יום אחד (start = end = date)
+        start, end = (_d(d["date"]), _d(d["date"])) if d.get("date") else (_d(d.get("start")), _d(d.get("end")))
+        return ChangeAmount(sel, _pct(d.get("pct")), _money(d.get("amount")), start, end,
+                            d.get("basis", "net"), _money(d.get("gross_monthly")), _pct(d.get("credit_points")), label,
+                            _money(d.get("set_to")))
     if t == "remove":
         return RemoveRows(sel, _d(d.get("start")), _d(d.get("end")), label)
     if t == "add_recurring":

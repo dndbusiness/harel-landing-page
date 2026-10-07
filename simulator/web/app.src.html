@@ -331,7 +331,8 @@ function ingest(statements, isSample) {
 function renderTxns() {
   const txns = S.merged.txns; $("#txnBox").hidden = false;
   $("#txnMeta").textContent = `${txns.length} תנועות · מהחדש לישן, כמו בדף`;
-  const rows = [...txns].reverse().map(t => `<tr><td>${OSH.dmyShort(t.date)}</td><td>${t.ch === "direct" ? "(י) " : t.ch === "banker" ? "(פ) " : ""}${h(t.desc)}</td><td class="n">${money(t.amt)}</td><td class="n">${t.bal != null ? money(t.bal) : ""}</td><td class="n">${h(t.ref)}</td><td>${h(t.cat)}${t.sub ? " / " + h(t.sub) : ""}</td></tr>`);
+  const byDay = new Map(); for (const t of txns) { if (!byDay.has(t.date)) byDay.set(t.date, []); byDay.get(t.date).push(t); }
+  const rows = [...byDay.keys()].reverse().flatMap(d => byDay.get(d)).map(t => `<tr><td>${OSH.dmyShort(t.date)}</td><td>${t.ch === "direct" ? "(י) " : t.ch === "banker" ? "(פ) " : ""}${h(t.desc)}</td><td class="n">${money(t.amt)}</td><td class="n">${t.bal != null ? money(t.bal) : ""}</td><td class="n">${h(t.ref)}</td><td>${h(t.cat)}${t.sub ? " / " + h(t.sub) : ""}</td></tr>`);
   $("#txnTable").innerHTML = `<thead><tr><th>תאריך</th><th>סוג תנועה</th><th>זכות/חובה</th><th>יתרה</th><th>אסמכתה</th><th>קטגוריה</th></tr></thead><tbody>${rows.join("")}</tbody>`;
 }
 $("#file").addEventListener("change", async e => { await handleFiles([...e.target.files]); e.target.value = ""; });
@@ -443,7 +444,7 @@ function selField(d) {
 function deltaBody(d) {
   const t = d.type;
   const range = `<label class="f"><span>מתאריך</span><input type="date" data-k="start"></label><label class="f"><span>עד תאריך</span><input type="date" data-k="end"></label>`;
-  if (t === "change") return selField(d) + `<label class="f"><span>שינוי באחוזים</span><input class="num" data-k="pct" inputmode="decimal" placeholder="10 או ‎-15"></label><label class="f"><span>או סכום לכל תנועה (₪)</span><input class="num" data-k="amount" inputmode="decimal" placeholder="500"></label>` + range;
+  if (t === "change") return selField(d) + `<label class="f"><span>שינוי באחוזים</span><input class="num" data-k="pct" inputmode="decimal" placeholder="10 או ‎-15"></label><label class="f"><span>או תוספת לכל תנועה (₪)</span><input class="num" data-k="amount" inputmode="decimal" placeholder="500"></label><label class="f"><span>או סכום חדש לתנועה (₪)</span><input class="num" data-k="setTo" inputmode="decimal" placeholder="18342"></label>` + range + `<p class="muted small" style="grid-column:1/-1">לתנועה של יום אחד: אותו תאריך ב"מתאריך" וב"עד תאריך".</p>`;
   if (t === "remove") return selField(d) + range;
   if (t === "add") return `<label class="f" style="grid-column:span 2"><span>תיאור</span><input data-k="description" value="הוראת קבע חדשה"></label><label class="f"><span>סכום (₪, חובה במינוס)</span><input class="num" data-k="amount" value="-500"></label><label class="f"><span>יום בחודש</span><input class="num" type="number" min="1" max="31" data-k="dom" value="10"></label><label class="f"><span>ערוץ</span><select data-k="ch"><option value="">רגיל</option><option value="direct">(י) ערוץ ישיר</option><option value="banker">(פ) בנקאי</option></select></label><label class="f"><span>אם נופל בשישי</span><select data-k="fri"><option value="same">באותו יום</option><option value="forward">ליום ראשון</option><option value="back">ליום חמישי</option></select></label>` + range;
   if (t === "oneoff") return `<label class="f" style="grid-column:span 2"><span>תיאור</span><input data-k="description" value="אירוע חד-פעמי"></label><label class="f"><span>תאריך</span><input type="date" data-k="date"></label><label class="f"><span>סכום (₪, חובה במינוס)</span><input class="num" data-k="amount" value="3000"></label>`;
@@ -471,12 +472,15 @@ function buildDeltas() {
     const label = TYPE_HE[type] + (v.description ? `: ${v.description}` : "");
     const range = { start: v.start || null, end: v.end || null };
     if (type === "change") {
-      if (!(v.pct || "").trim() && !(v.amount || "").trim()) throw new Error("בשינוי סכום צריך אחוז או סכום");
-      if ((v.pct || "").trim() && (v.amount || "").trim()) throw new Error("בשינוי סכום ממלאים אחוז או סכום, לא את שניהם");
-      OSH[(v.pct || "").trim() ? "parseScaled" : "fromShekels"]((v.pct || v.amount).trim());
+      const pct = (v.pct || "").trim(), amount = (v.amount || "").trim(), setTo = (v.setTo || "").trim();
+      const filled = [pct, amount, setTo].filter(Boolean).length;
+      if (filled !== 1) throw new Error("בשינוי סכום ממלאים אחד בלבד: אחוז, תוספת או סכום חדש");
+      if (pct) OSH.parseScaled(pct); else OSH.fromShekels(amount || setTo);
       const sel = toSelector(v.sel);
-      return { type, select: sel, pct: (v.pct || "").trim() || null, amount: (v.amount || "").trim() || null, ...range,
-        label: `${(v.pct || "").trim() ? (v.pct.trim().startsWith("-") ? "" : "+") + v.pct.trim() + "%" : OSH.fmt(OSH.fromShekels(v.amount.trim())) + " ₪ לתנועה"} על ${selLabel(sel)}` };
+      const what = setTo ? `סכום חדש ${OSH.fmt(OSH.fromShekels(setTo))} ₪` : pct ? (pct.startsWith("-") ? "" : "+") + pct + "%"
+        : (amount.startsWith("-") ? "" : "+") + OSH.fmt(OSH.fromShekels(amount)) + " ₪ לתנועה";
+      const when = range.start && range.start === range.end ? ` (${OSH.dmy(range.start)})` : "";
+      return { type, select: sel, pct: pct || null, amount: amount || null, setTo: setTo || null, ...range, label: `${what} על ${selLabel(sel)}${when}` };
     }
     if (type === "remove") { const sel = toSelector(v.sel); return { type, select: sel, ...range, label: `ביטול ${selLabel(sel)}` }; }
     if (type === "add") { OSH.fromShekels(v.amount ?? "-500"); return { type, description: v.description || "הוראת קבע חדשה", amount: v.amount ?? "-500", dom: +(v.dom || 10), ch: v.ch || null, fri: v.fri || "same", ...range, label }; }
@@ -563,8 +567,8 @@ function renderResults() {
 function statementTable(res) {
   const mark = { modified: " ✱", added: " ＋", projected: " ~", fee: " ~", interest: " ~" };
   const out = [];
-  for (const day of [...res.days].reverse()) [...day.rows].reverse().forEach((r, i) => out.push(
-    `<tr class="${[r.origin !== "historical" ? "chg" : "", i === 0 ? "daystart" : ""].join(" ")}"><td>${OSH.dmyShort(r.date)}</td><td></td><td>${r.ch === "direct" ? "(י) " : r.ch === "banker" ? "(פ) " : ""}${h(r.desc.replace(/\d[\d\- /]{6,}\d/g, m => "•".repeat(Math.max(0, m.replace(/\D/g, "").length - 4)) + m.replace(/\D/g, "").slice(-4)))}${mark[r.origin] || ""}</td><td class="n">${money(r.amt)}</td><td class="n">${i === 0 ? money(day.bal) : ""}</td><td class="n">${h(r.ref)}</td></tr>`));
+  for (const day of [...res.days].reverse()) day.rows.forEach((r, i, all) => out.push(
+    `<tr class="${[r.origin !== "historical" ? "chg" : "", i === 0 ? "daystart" : ""].join(" ")}"><td>${OSH.dmyShort(r.date)}</td><td></td><td>${r.ch === "direct" ? "(י) " : r.ch === "banker" ? "(פ) " : ""}${h(r.desc.replace(/\d[\d\- /]{6,}\d/g, m => "•".repeat(Math.max(0, m.replace(/\D/g, "").length - 4)) + m.replace(/\D/g, "").slice(-4)))}${mark[r.origin] || ""}</td><td class="n">${money(r.amt)}</td><td class="n">${i === all.length - 1 ? money(day.bal) : ""}</td><td class="n">${h(r.ref)}</td></tr>`));
   return `<table><thead><tr><th colspan="6" style="color:var(--neg);text-align:center;background:transparent">${WM}</th></tr><tr><th>תאריך</th><th>תאריך ערך</th><th>סוג תנועה</th><th>זכות/חובה</th><th>יתרה</th><th>אסמכתה</th></tr></thead><tbody>${out.join("")}</tbody></table>`;
 }
 function renderStatement() {

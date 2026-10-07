@@ -68,7 +68,8 @@ def statement_html(res: SimResult, account_hint: str = "", client_label: str = "
     acct = mask_account(account_hint)
     rows_html = []
     for day in reversed(res.days):              # מהחדש לישן
-        rows = list(reversed(day.rows))         # השורה הכרונולוגית האחרונה למעלה, עם היתרה
+        rows = day.rows                         # בתוך היום כמו בדף, היתרה בשורה האחרונה
+        last = len(rows) - 1
         for i, r in enumerate(rows):
             changed = r.origin != "historical"
             mark = {"modified": " ✱", "added": " ＋", "projected": " ~", "fee": " ~", "interest": " ~"}.get(r.origin, "")
@@ -77,7 +78,7 @@ def statement_html(res: SimResult, account_hint: str = "", client_label: str = "
                 f'<tr class="{cls}"><td>{r.date:%d/%m/%y}</td><td></td>'
                 f"<td>{html.escape(CHANNEL_MARK.get(r.channel or '', '') + mask_text(r.description))}{mark}</td>"
                 f'<td class="num {_cls(r.amount)}">{fmt(r.amount)}</td>'
-                f'<td class="num {_cls(day.balance)}">{fmt(day.balance) if i == 0 else ""}</td>'
+                f'<td class="num {_cls(day.balance)}">{fmt(day.balance) if i == last else ""}</td>'
                 f"<td>{html.escape(r.reference)}</td></tr>")
     period = f"{res.start:%d/%m/%Y} – {res.end:%d/%m/%Y}"
     body = f"""

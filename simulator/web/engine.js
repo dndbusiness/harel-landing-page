@@ -97,6 +97,11 @@ const OSH = (() => {
   }
 
   // ---------- transactions ----------
+  // הדף: ימים מהחדש לישן, בתוך יום בסדר הדף עם היתרה בשורה האחרונה. הופכים רק את סדר הימים.
+  function chronological(txns) {
+    const days = new Map(); for (const t of txns) { if (!days.has(t.date)) days.set(t.date, []); days.get(t.date).push(t); }
+    return [...days.keys()].reverse().flatMap(d => days.get(d));
+  }
   function finalize(txns) {
     const seen = {};
     for (const t of txns) {
@@ -142,8 +147,7 @@ const OSH = (() => {
       } catch (e) { throw new Error(`${src} שורה ${i + 2}: ${e.message}`); }
     });
     if (!txns.length) throw new Error(`${src}: קובץ ריק`);
-    if (txns[0].date > txns[txns.length - 1].date) txns.reverse();
-    return { src, txns: finalize(txns) };
+    return { src, txns: finalize(txns[0].date > txns[txns.length - 1].date ? chronological(txns) : txns) };
   }
 
   // ---------- PDF (Mizrahi-Tefahot "עובר ושב") ----------
@@ -222,8 +226,8 @@ const OSH = (() => {
       if (HEB.test(ref)) throw new Error(`${where}אסמכתה לא צפויה "${ref}" | שורה: ${r.raw}`);
       return makeTxn({ date: parseDate(c.date), vdate: isDate(c.value_date || "") ? parseDate(c.value_date) : null,
         desc, amt, bal, ref, ch, src, page: r.page, raw: r.raw });
-    }).reverse();
-    return { src, txns: finalize(txns) };
+    });
+    return { src, txns: finalize(chronological(txns)) };
   }
 
   // ---------- merge & validate ----------
@@ -415,7 +419,8 @@ const OSH = (() => {
       const out = rows.map(r => {
         if (r.origin === "removed" || !selMatch(dl.select, r) || !inRange(r.date, dl.start, dl.end)) return r;
         const sign = r.amt >= 0 ? 1 : -1, mag = Math.abs(r.amt);
-        let nm = dl.pct != null && dl.pct !== "" ? scalePct(mag, dl.pct) : mag + fromShekels(dl.amount);
+        let nm = dl.setTo != null && dl.setTo !== "" ? Math.abs(fromShekels(dl.setTo))
+          : dl.pct != null && dl.pct !== "" ? scalePct(mag, dl.pct) : mag + fromShekels(dl.amount);
         nm = Math.max(0, nm); hit++; if (r.kind === "card_charge") card++;
         return { ...r, amt: sign * nm, origin: "modified", base: r.base ?? r.amt, note: label };
       });

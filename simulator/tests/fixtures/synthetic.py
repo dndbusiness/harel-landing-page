@@ -126,11 +126,19 @@ def _desc(r):
     return mark + r["description"]
 
 
+def bank_order(rows):
+    """כמו בדף: ימים מהחדש לישן, בתוך יום כרונולוגי — היתרה בשורה האחרונה של היום."""
+    days = {}
+    for r in rows:
+        days.setdefault(r["date"], []).append(r)
+    return [r for d in reversed(list(days)) for r in days[d]]
+
+
 def write_csv(rows, path: Path):
     with path.open("w", encoding="utf-8", newline="") as f:
         w = csv.writer(f)
         w.writerow(["date", "value_date", "description", "amount", "balance", "reference", "channel"])
-        for r in reversed(rows):   # כמו בדף: מהחדש לישן
+        for r in bank_order(rows):
             w.writerow([r["date"].strftime("%d/%m/%Y"), "", _desc(r), _money(r["amount"]),
                         _money(r["balance"]), r["reference"], ""])
 
@@ -164,7 +172,7 @@ def write_pdf(rows, path: Path, visual_order: bool = True):
         for k, x in cols.items():
             c.drawCentredString(x, H - 80, txt(headers[k]))
 
-    disp = list(reversed(rows))
+    disp = bank_order(rows)
     per_page = 48
     for p in range(0, len(disp), per_page):
         header()

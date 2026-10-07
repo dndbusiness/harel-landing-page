@@ -63,10 +63,18 @@ def describe_delta(d: Delta) -> str:
     rng = ""
     if getattr(d, "start", None) or getattr(d, "end", None):
         s, e = getattr(d, "start", None), getattr(d, "end", None)
-        rng = f" ({s:%d/%m/%Y}" if s else " (מההתחלה"
-        rng += f" עד {e:%d/%m/%Y})" if e else " והלאה)"
+        if s and s == e:
+            rng = f" ({s:%d/%m/%Y})"
+        else:
+            rng = f" ({s:%d/%m/%Y}" if s else " (מההתחלה"
+            rng += f" עד {e:%d/%m/%Y})" if e else " והלאה)"
     if isinstance(d, ChangeAmount):
-        what = f"{'+' if d.pct and d.pct > 0 else ''}{d.pct}%" if d.pct is not None else f"{fmt(d.amount)} ₪ לשורה"
+        if d.set_to is not None:
+            what = f"סכום חדש {fmt(d.set_to)} ₪"
+        elif d.pct is not None:
+            what = f"{'+' if d.pct > 0 else ''}{d.pct}%"
+        else:
+            what = f"{'+' if d.amount > 0 else ''}{fmt(d.amount)} ₪ לשורה"
         basis = " בברוטו" if d.basis == "gross" else ""
         return f"{d.label}: {what}{basis} על {d.select.describe()}{rng}"
     if isinstance(d, LoanSchedule):

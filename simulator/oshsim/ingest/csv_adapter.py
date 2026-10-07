@@ -2,7 +2,7 @@
 
 עמודות: date, value_date, description, amount, balance, reference, channel
 (channel: direct / banker / ריק; או שהתיאור מכיל (י)/(פ)).
-סדר השורות כמו בדף הבנק (מהחדש לישן) או כרונולוגי — נקבע לפי `order`.
+סדר השורות כמו בדף הבנק (ימים מהחדש לישן, יתרה בשורה האחרונה של היום) או כרונולוגי — נקבע לפי `order`.
 """
 from __future__ import annotations
 
@@ -10,7 +10,8 @@ import csv
 from pathlib import Path
 
 from ..model.money import parse_amount
-from ..model.transaction import Statement, Transaction, assign_occurrence_indices
+from ..model.transaction import (Statement, Transaction, assign_occurrence_indices,
+                                 days_newest_first_to_chronological)
 from .common import ParseError, is_date, parse_date, split_channel
 
 
@@ -46,6 +47,6 @@ def parse_csv(path: str | Path, order: str = "auto") -> Statement:
     if order == "auto":
         order = "newest_first" if txns[0].date > txns[-1].date else "chronological"
     if order == "newest_first":
-        txns.reverse()
+        txns = days_newest_first_to_chronological(txns)
     assign_occurrence_indices(txns)
     return Statement(source_file=path.name, transactions=txns)

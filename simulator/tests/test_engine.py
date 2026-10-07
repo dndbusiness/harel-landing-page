@@ -233,3 +233,13 @@ def test_interest_calibration_full_period():
     assert cal[0].partial_period and not cal[1].partial_period
     assert cal[1].error_pct == 0 and not res.interest_is_estimate
     assert identity_mismatches(res, t) == []
+
+
+def test_set_to_single_day(loaded, params):
+    from oshsim.engine.deltas import delta_from_dict
+    d = delta_from_dict({"type": "change_amount", "label": "שכר", "select": {"description": "משכורת"},
+                         "date": "2026-08-10", "set_to": "15000.00"}, CONFIG)
+    out = run(loaded, params, d)
+    hit = [r for r in out.scenario.rows() if r.origin == "modified"]
+    assert [(r.date, r.amount) for r in hit] == [(date(2026, 8, 10), 1500000)]
+    assert out.scenario.closing - out.base.closing == 1500000 - hit[0].base_amount

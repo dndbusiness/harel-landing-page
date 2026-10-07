@@ -17,7 +17,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from ..model.money import MoneyParseError, looks_like_amount, parse_amount
-from ..model.transaction import Statement, Transaction, assign_occurrence_indices
+from ..model.transaction import (Statement, Transaction, assign_occurrence_indices,
+                                 days_newest_first_to_chronological)
 from .common import ParseError, is_date, parse_date, split_channel
 from .hebrew import has_hebrew, normalize_spaces, visual_to_logical
 
@@ -149,7 +150,7 @@ class MizrahiOshParser:
             raise ParseError(f"{path.name}: לא נמצאה טבלת תנועות. הריצו `oshsim inspect` לבדיקה.")
 
         txns = [self._to_txn(r, path.name) for r in display_rows]
-        txns.reverse()  # כרונולוגי
+        txns = days_newest_first_to_chronological(txns)
         assign_occurrence_indices(txns)
         return Statement(source_file=path.name, transactions=txns)
 

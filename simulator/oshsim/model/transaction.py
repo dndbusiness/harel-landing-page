@@ -74,6 +74,15 @@ class Statement:
         return self.transactions[-1].date
 
 
+def days_newest_first_to_chronological(txns: list[Transaction]) -> list[Transaction]:
+    """דף הבנק: הימים מהחדש לישן, ובתוך יום השורות בסדר הדף, עם היתרה בשורה האחרונה של היום.
+    הופכים את סדר הימים בלבד, כך שהשורה שנושאת את יתרת סוף היום נשארת אחרונה ביומה."""
+    days: dict = {}
+    for t in txns:
+        days.setdefault(t.date, []).append(t)
+    return [t for d in reversed(list(days)) for t in days[d]]
+
+
 def assign_occurrence_indices(txns: list[Transaction]) -> None:
     """שורות זהות באותו יום הן לגיטימיות — ממספרים אותן במקום למחוק."""
     seen: dict[tuple, int] = {}
