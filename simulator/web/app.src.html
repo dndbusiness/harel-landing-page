@@ -1,0 +1,686 @@
+<title>סימולטור עו״ש הר-אל</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: navy masthead with step tabs; one working panel at a time; numbers in a ledger mono, right-to-left. */
+:root{
+  --bg:#F3F5F4; --surface:#FFFFFF; --sunk:#E8EDEC; --line:#D3DCDA;
+  --ink:#0B2730; --muted:#4E666E; --accent:#178379; --accent-ink:#FFFFFF; --gold:#A87A1E;
+  --neg:#B42318; --pos:#16794A; --mark:#FFF1CF; --wm:rgba(180,35,24,.10);
+  --mast:#061A22; --mast-ink:#F4F1EA; --mast-muted:rgba(244,241,234,.66);
+  --f-body:"Heebo",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+  --f-num:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#08161C; --surface:#0E222B; --sunk:#133039; --line:#21424D;
+  --ink:#E8EEEC; --muted:#9DB3B8; --accent:#4FD6C8; --accent-ink:#04211E; --gold:#E7C879;
+  --neg:#FF8A80; --pos:#5BD99A; --mark:#3A3014; --wm:rgba(255,138,128,.10);
+  --mast:#040F14; --mast-ink:#F4F1EA; --mast-muted:rgba(244,241,234,.6); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#08161C; --surface:#0E222B; --sunk:#133039; --line:#21424D;
+  --ink:#E8EEEC; --muted:#9DB3B8; --accent:#4FD6C8; --accent-ink:#04211E; --gold:#E7C879;
+  --neg:#FF8A80; --pos:#5BD99A; --mark:#3A3014; --wm:rgba(255,138,128,.10);
+  --mast:#040F14; --mast-ink:#F4F1EA; --mast-muted:rgba(244,241,234,.6); color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{direction:rtl}
+body{background:var(--bg);color:var(--ink);font:15px/1.55 var(--f-body)}
+.num,td.n{font-family:var(--f-num);font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate;white-space:nowrap}
+td.n{text-align:left}
+.neg{color:var(--neg)} .pos{color:var(--pos)}
+h1,h2,h3{text-wrap:balance;margin:0}
+h2{font-size:1.15rem;font-weight:800}
+h3{font-size:.95rem;font-weight:700}
+p{margin:0}
+.muted{color:var(--muted)}
+.small{font-size:.85rem}
+
+.mast{background:var(--mast);color:var(--mast-ink)}
+.mast .in{min-width:0;max-width:1180px;margin-inline:auto;padding:18px 16px 0;display:flex;flex-direction:column;gap:14px}
+.brand{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px 18px}
+.brand h1{font-size:1.45rem;font-weight:800;letter-spacing:-.01em}
+.brand .tag{color:var(--mast-muted);font-size:.9rem}
+.lock{margin-inline-start:auto;display:inline-flex;align-items:center;gap:8px;font-size:.82rem;color:var(--mast-muted)}
+.lock svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2}
+.tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;min-width:0;max-width:100%}
+.tabs button{all:unset;cursor:pointer;padding:10px 14px 12px;color:var(--mast-muted);font-weight:500;font-size:.92rem;
+  border-bottom:3px solid transparent;white-space:nowrap;display:flex;gap:8px;align-items:center}
+.tabs button .k{font-family:var(--f-num);font-size:.75rem;opacity:.7}
+.tabs button[aria-selected="true"]{color:var(--mast-ink);border-color:#2BB6AA}
+.tabs button:disabled{opacity:.35;cursor:not-allowed}
+.tabs button:focus-visible{outline:2px solid #4FD6C8;outline-offset:-2px}
+
+main{max-width:1180px;margin-inline:auto;padding-inline:16px;padding-block:22px 60px}
+.panel{display:flex;flex-direction:column;gap:18px;min-width:0}
+.panel > *{min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:18px}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.box > header{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:baseline;justify-content:space-between}
+
+.btn{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:8px;font-weight:700;font-size:.9rem;
+  background:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn.small{padding:5px 10px;font-size:.8rem;font-weight:500}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:7px 9px;min-width:0}
+input.num{text-align:left}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:.82rem;color:var(--muted);min-width:0}
+label.f > span{font-weight:500}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+
+.drop{border:2px dashed var(--line);border-radius:var(--r);padding:22px;text-align:center;display:flex;flex-direction:column;gap:8px;align-items:center;background:var(--surface)}
+.drop.over{border-color:var(--accent);background:var(--sunk)}
+.banner{border-radius:8px;padding:10px 14px;font-size:.9rem;display:flex;gap:10px;align-items:flex-start}
+.banner.sample{background:var(--mark)}
+.banner.err{background:color-mix(in srgb,var(--neg) 14%,var(--surface));color:var(--ink);border:1px solid var(--neg)}
+.banner.ok{background:color-mix(in srgb,var(--pos) 12%,var(--surface))}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:99px;padding:2px 10px;font-size:.78rem;font-weight:700;background:var(--sunk);color:var(--muted)}
+.pill.ok{background:color-mix(in srgb,var(--pos) 18%,transparent);color:var(--pos)}
+.pill.bad{background:color-mix(in srgb,var(--neg) 18%,transparent);color:var(--neg)}
+.pill.est{background:var(--mark);color:var(--gold)}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));gap:12px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.stat .k{font-size:.8rem;color:var(--muted)}
+.stat .v{font-family:var(--f-num);font-size:1.25rem;font-weight:500;direction:ltr;text-align:right}
+.stat .d{font-size:.78rem;color:var(--muted)}
+
+.scroll{overflow-x:auto;max-width:100%}
+.scroll.tall{max-height:460px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th,td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:right;vertical-align:top}
+th{position:sticky;top:0;background:var(--sunk);font-weight:700;font-size:.8rem;color:var(--muted);z-index:1}
+tr.chg td{background:var(--mark)}
+tr.daystart td{border-top:2px solid var(--line)}
+.delta{border:1px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:10px;background:var(--bg)}
+.delta header{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.delta header b{font-size:.9rem}
+.addbar{display:flex;flex-wrap:wrap;gap:8px}
+ul.plain{margin:0;padding-inline-start:18px;display:flex;flex-direction:column;gap:4px}
+svg.chart{width:100%;height:auto;display:block}
+svg.chart text{fill:var(--muted);font:11px var(--f-num)}
+
+.stmt{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;overflow:hidden}
+.stmt .wm{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.stmt .wm span{transform:rotate(-24deg);font-size:clamp(28px,7vw,76px);font-weight:800;color:var(--wm);white-space:nowrap}
+.stmt .flag{border:2px solid var(--neg);color:var(--neg);font-weight:800;text-align:center;padding:7px;border-radius:6px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<header class="mast">
+  <div class="in">
+    <div class="brand">
+      <h1>סימולטור עו״ש</h1>
+      <span class="tag">הר-אל פתרונות מימון · כלי עבודה ליועץ</span>
+      <span class="lock"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>הקבצים נקראים רק בדפדפן הזה. שום נתון לקוח לא נשלח ולא נשמר.</span>
+    </div>
+    <nav class="tabs" role="tablist" id="tabs">
+      <button role="tab" data-t="ingest" aria-selected="true"><span class="k">1</span>דף חשבון</button>
+      <button role="tab" data-t="classify"><span class="k">2</span>סיווג ודפוסים</button>
+      <button role="tab" data-t="params"><span class="k">3</span>פרמטרים</button>
+      <button role="tab" data-t="scenario"><span class="k">4</span>תרחיש</button>
+      <button role="tab" data-t="results"><span class="k">5</span>תוצאות</button>
+      <button role="tab" data-t="statement"><span class="k">6</span>דף מדומה</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div id="sampleBanner" class="banner sample" hidden><b>נתוני דוגמה.</b> דף סינתטי עם שמות וסכומים מומצאים, כדי להראות איך הכלי עובד. העלו דף של לקוח כדי להתחיל.</div>
+
+  <!-- 1 -->
+  <section class="panel" data-p="ingest">
+    <div class="drop" id="drop">
+      <h2>העלאת דפי עו״ש</h2>
+      <p class="muted small">PDF של מזרחי טפחות ("עובר ושב — יתרה ותנועות בחשבון") או CSV. אפשר כמה קבצים, גם עם תאריכים חופפים.</p>
+      <div class="row" style="justify-content:center">
+        <label class="btn" for="file">בחירת קבצים</label>
+        <input id="file" type="file" accept=".pdf,.csv" multiple hidden>
+        <button class="btn ghost" id="loadSample">טעינת הדוגמה</button>
+      </div>
+      <p class="muted small">עמודות CSV: date, value_date, description, amount, balance, reference, channel</p>
+    </div>
+    <div id="ingestStatus"></div>
+    <div class="box" id="txnBox" hidden>
+      <header><h2>תנועות</h2><span class="muted small" id="txnMeta"></span></header>
+      <div class="scroll tall"><table id="txnTable"></table></div>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="panel" data-p="classify" hidden>
+    <div class="box">
+      <header><h2>תור אישור</h2><span class="muted small" id="queueMeta"></span></header>
+      <p class="muted small">תנועות שאף כלל לא זיהה. כל אישור נשמר ככלל ומסווג גם תנועות דומות. הכללים נשמרים רק בדפדפן שלכם.</p>
+      <div class="scroll"><table id="queueTable"></table></div>
+      <datalist id="catList"></datalist>
+      <div class="row"><span class="muted small" id="rulesMeta"></span><button class="btn ghost small" id="clearRules">מחיקת הכללים שאושרו</button></div>
+    </div>
+    <div class="box">
+      <header><h2>תנועות קבועות</h2><span class="muted small">כלל הזזה נלמד לכל מנפיק בנפרד</span></header>
+      <div class="scroll"><table id="patTable"></table></div>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="panel" data-p="params" hidden>
+    <div class="grid2">
+      <div class="box">
+        <header><h2>עמלת ערוץ ישיר</h2></header>
+        <div class="fields">
+          <label class="f"><span>תעריף לפעולה (₪)</span><input id="feeRate" class="num" inputmode="decimal" value="1.76"></label>
+          <label class="f"><span>פעולות חינם בחודש</span><input id="feeFree" class="num" inputmode="numeric" value="0"></label>
+        </div>
+        <label class="f"><span>מקור</span><input id="feeSrc" value="כיול מול שורות העמלה בדף (35→61.60, 45→79.20, 36→63.36)"></label>
+        <h3>כיול מול הדף</h3>
+        <ul class="plain small" id="feeCal"></ul>
+      </div>
+      <div class="box">
+        <header><h2>ריבית עו״ש</h2><span class="pill" id="intPill"></span></header>
+        <p class="muted small">הריבית לא מופיעה בדף. מזינים מהודעת הבנק, והכלי בודק את המודל מול חיובי הריבית שנרשמו בפועל.</p>
+        <div id="rateRows" class="panel" style="gap:8px"></div>
+        <div class="row"><button class="btn ghost small" id="addRate">הוספת תקופה</button></div>
+        <h3>כיול מול הדף</h3>
+        <ul class="plain small" id="intCal"></ul>
+      </div>
+      <div class="box">
+        <header><h2>מסגרת אשראי</h2></header>
+        <div class="fields">
+          <label class="f"><span>מסגרת (₪)</span><input id="limit" class="num" inputmode="decimal" placeholder="לא הוזנה"></label>
+          <label class="f"><span>מקור</span><input id="limitSrc" placeholder="למשל: אישור מסגרת מהבנק"></label>
+        </div>
+        <p class="muted small">בלי מסגרת לא נספרים ימי חריגה.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section class="panel" data-p="scenario" hidden>
+    <div class="box">
+      <div class="fields">
+        <label class="f" style="grid-column:span 2"><span>שם התרחיש</span><input id="scName" value="העלאת שכר 10% מיולי"></label>
+        <label class="f"><span>מצב</span><select id="scMode"><option value="replay">מה היה קורה (Replay)</option><option value="forward">הקרנה קדימה (Forward)</option></select></label>
+        <label class="f"><span>חודשי הקרנה</span><input id="scMonths" class="num" type="number" min="1" max="24" value="3"></label>
+      </div>
+    </div>
+    <div class="box">
+      <header><h2>שינויים</h2></header>
+      <div id="deltas" class="panel" style="gap:10px"></div>
+      <div class="addbar">
+        <button class="btn ghost small" data-add="change">שינוי סכום (שכר / הוצאה)</button>
+        <button class="btn ghost small" data-add="remove">ביטול הוראת קבע</button>
+        <button class="btn ghost small" data-add="add">הוראת קבע חדשה</button>
+        <button class="btn ghost small" data-add="oneoff">אירוע חד-פעמי</button>
+        <button class="btn ghost small" data-add="loan">פירעון/מחזור הלוואה</button>
+        <button class="btn ghost small" data-add="rate">שינוי ריבית</button>
+      </div>
+      <p class="muted small">שכר מוזן בנטו. חישוב מברוטו דורש טבלת מס ממקור רשמי, והוא זמין רק בגרסת שורת הפקודה.</p>
+    </div>
+    <div class="row"><button class="btn" id="runBtn">הרצת התרחיש</button><span id="runMsg" class="small"></span></div>
+  </section>
+
+  <!-- 5 -->
+  <section class="panel" data-p="results" hidden>
+    <div id="results"></div>
+  </section>
+
+  <!-- 6 -->
+  <section class="panel" data-p="statement" hidden>
+    <div class="row"><button class="btn" id="dlHtml">שמירת הדף המדומה (HTML)</button><span class="muted small" id="dlNote2"></span></div>
+    <div id="stmt"></div>
+  </section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>/*ENGINE*/</script>
+<script>
+const DATA = /*DATA*/;
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const h = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const cls = a => a < 0 ? "neg" : a > 0 ? "pos" : "";
+const money = a => `<span class="num ${cls(a)}">${OSH.fmt(a)}</span>`;
+const WM = "סימולציה — אינו מסמך בנקאי";
+const cal = new OSH.Calendar(DATA.holidays);
+
+const S = { files: [], txns: null, rep: null, merged: null, queue: [], patterns: [], deltas: [], out: null, sample: false, approved: loadApproved() };
+function loadApproved() { try { return JSON.parse(localStorage.getItem("oshsim.rules") || "[]"); } catch { return []; } }
+function saveApproved() { try { localStorage.setItem("oshsim.rules", JSON.stringify(S.approved)); } catch {} }
+
+// ---------- tabs ----------
+function showTab(t) {
+  $$("#tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.t === t));
+  $$("[data-p]").forEach(p => p.hidden = p.dataset.p !== t);
+}
+$("#tabs").addEventListener("click", e => { const b = e.target.closest("button"); if (b && !b.disabled) showTab(b.dataset.t); });
+function lockTabs(ok) { $$("#tabs button").forEach(b => { if (b.dataset.t !== "ingest") b.disabled = !ok; }); }
+function lockResults(ok) { $$("#tabs button").forEach(b => { if (b.dataset.t === "results" || b.dataset.t === "statement") b.disabled = !ok || !S.txns; }); }
+
+// ---------- ingest ----------
+async function pdfWords(buf) {
+  const doc = await pdfjsLib.getDocument({ data: buf, isEvalSupported: false }).promise;
+  const pages = [];
+  for (let p = 1; p <= doc.numPages; p++) {
+    const page = await doc.getPage(p), vp = page.getViewport({ scale: 1 }), tc = await page.getTextContent();
+    const words = [];
+    for (const it of tc.items) {
+      if (!it.str || !it.str.trim()) continue;
+      const x = it.transform[4], top = vp.height - it.transform[5], w = it.width, n = it.str.length, cw = n ? w / n : 0;
+      const rtl = it.dir === "rtl";
+      let off = 0;
+      for (const tok of it.str.split(/(\s+)/)) {
+        if (tok && !/^\s+$/.test(tok)) {
+          const a = rtl ? x + w - (off + tok.length) * cw : x + off * cw;
+          words.push({ text: tok, x0: a, x1: a + tok.length * cw, top });
+        }
+        off += tok.length;
+      }
+    }
+    pages.push({ page: p, words });
+  }
+  return pages;
+}
+async function readFiles(files) {
+  const sts = [];
+  for (const f of files) {
+    if (/\.pdf$/i.test(f.name)) {
+      if (!window.pdfjsLib) throw new Error("קורא ה-PDF לא נטען. נסו לרענן, או העלו CSV.");
+      sts.push(OSH.parsePdfWords(await pdfWords(new Uint8Array(await f.arrayBuffer())), f.name));
+    } else if (/\.csv$/i.test(f.name)) sts.push(OSH.parseCSV(await f.text(), f.name));
+    else throw new Error(`${f.name}: סוג קובץ לא נתמך (PDF או CSV בלבד)`);
+  }
+  return sts;
+}
+function sampleStatement() {
+  const txns = DATA.sample.map(([d, desc, amt, bal, ref]) => {
+    const [ds, ch] = OSH.splitChannel(desc);
+    return OSH.makeTxn({ date: d, desc: ds, amt, bal, ref, ch, src: "דוגמה" });
+  });
+  return { src: "דוגמה (סינתטי)", txns: OSH.finalize(txns) };
+}
+function ingest(statements, isSample) {
+  S.sample = isSample; $("#sampleBanner").hidden = !isSample;
+  S.out = null; lockResults(false);
+  const st = $("#ingestStatus");
+  const m = OSH.merge(statements);
+  const info = statements.map(s => `<li>${h(s.src)}: ${s.txns.length} תנועות, ${OSH.dmy(s.txns[0].date)}–${OSH.dmy(s.txns[s.txns.length - 1].date)}</li>`).join("");
+  if (m.issues.length) return fail(`<b>הקבצים סותרים זה את זה.</b><ul class="plain">${m.issues.map(x => `<li>${h(x)}</li>`).join("")}</ul>`);
+  const rep = OSH.validate(m.txns);
+  S.merged = m; S.rep = rep; S.txns = m.txns;
+  renderTxns();
+  if (!rep.ok) {
+    S.txns = null;
+    return fail(`<div><b>הדף לא מתיישב, ולכן הכלי עוצר.</b> אין תיקון אוטומטי. בדקו את השורות בימים האלה מול הדף המקורי.
+      ${rep.errors.length ? `<ul class="plain">${rep.errors.map(x => `<li>${h(x)}</li>`).join("")}</ul>` : ""}
+      ${rep.gaps.length ? `<div class="scroll"><table><tr><th>יום</th><th>צפוי</th><th>בפועל בדף</th><th>הפרש</th></tr>${rep.gaps.map(g => `<tr><td>${OSH.dmy(g.day)}</td><td class="n">${money(g.expected)}</td><td class="n">${money(g.actual)}</td><td class="n">${money(g.diff)}</td></tr>`).join("")}</table></div>` : ""}</div>`);
+  }
+  st.innerHTML = `<div class="stats">
+    <div class="stat"><span class="k">ולידציה</span><span class="pill ok" style="align-self:flex-start">כל ${rep.daysChecked} הימים מתיישבים</span><span class="d">${m.dropped ? `${m.dropped} שורות חופפות נספרו פעם אחת` : "אין חפיפה בין קבצים"}</span></div>
+    <div class="stat"><span class="k">יתרת פתיחה (נגזרת)</span><span class="v ${cls(rep.opening)}">${OSH.fmt(rep.opening)}</span><span class="d">${h(rep.log[0] || "")}</span></div>
+    <div class="stat"><span class="k">יתרת סגירה</span><span class="v ${cls(rep.closing)}">${OSH.fmt(rep.closing)}</span><span class="d">${OSH.dmy(m.txns[m.txns.length - 1].date)}</span></div>
+    <div class="stat"><span class="k">קבצים</span><ul class="plain small">${info}</ul></div></div>`;
+  recategorize();
+  lockTabs(true);
+  function fail(html) { st.innerHTML = `<div class="banner err">${html}</div><ul class="plain small muted">${info}</ul>`; lockTabs(false); $("#txnBox").hidden = !S.merged; }
+}
+function renderTxns() {
+  const txns = S.merged.txns; $("#txnBox").hidden = false;
+  $("#txnMeta").textContent = `${txns.length} תנועות · מהחדש לישן, כמו בדף`;
+  const rows = [...txns].reverse().map(t => `<tr><td>${OSH.dmyShort(t.date)}</td><td>${t.ch === "direct" ? "(י) " : t.ch === "banker" ? "(פ) " : ""}${h(t.desc)}</td><td class="n">${money(t.amt)}</td><td class="n">${t.bal != null ? money(t.bal) : ""}</td><td class="n">${h(t.ref)}</td><td>${h(t.cat)}${t.sub ? " / " + h(t.sub) : ""}</td></tr>`);
+  $("#txnTable").innerHTML = `<thead><tr><th>תאריך</th><th>סוג תנועה</th><th>זכות/חובה</th><th>יתרה</th><th>אסמכתה</th><th>קטגוריה</th></tr></thead><tbody>${rows.join("")}</tbody>`;
+}
+$("#file").addEventListener("change", async e => { await handleFiles([...e.target.files]); e.target.value = ""; });
+const drop = $("#drop");
+["dragenter", "dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", e => handleFiles([...e.dataTransfer.files]));
+async function handleFiles(files) {
+  if (!files.length) return;
+  $("#ingestStatus").innerHTML = `<p class="muted">קורא ${files.length} קבצים…</p>`;
+  try { ingest(await readFiles(files), false); }
+  catch (err) { $("#ingestStatus").innerHTML = `<div class="banner err"><div><b>לא ניתן לקרוא את הקובץ.</b> ${h(err.message)}</div></div>`; lockTabs(false); }
+}
+$("#loadSample").addEventListener("click", () => { ingest([sampleStatement()], true); });
+
+// ---------- classify ----------
+function rules() { return OSH.compileRules([...DATA.rules, ...S.approved]); }
+function recategorize() {
+  const r = OSH.categorize(S.txns, rules());
+  S.queue = r.queue; S.patterns = OSH.detect(S.txns, cal);
+  renderTxns(); renderQueue(); renderPatterns(); renderCalibration(); renderDeltas();
+}
+function categories() {
+  const set = new Set(DATA.rules.map(r => r.category)); S.approved.forEach(r => set.add(r.category));
+  set.delete(OSH.UNCAT); return [...set].sort();
+}
+function renderQueue() {
+  $("#catList").innerHTML = categories().map(c => `<option value="${h(c)}">`).join("");
+  $("#queueMeta").textContent = S.queue.length ? `${S.queue.length} ממתינות` : "התור ריק";
+  $("#rulesMeta").textContent = `${S.approved.length} כללים שאושרו בדפדפן הזה`;
+  if (!S.queue.length) { $("#queueTable").innerHTML = `<tr><td class="muted">כל התנועות סווגו.</td></tr>`; return; }
+  $("#queueTable").innerHTML = `<thead><tr><th>תאריך</th><th>סוג תנועה</th><th>סכום</th><th>קטגוריה</th><th>תת-קטגוריה</th><th></th></tr></thead><tbody>` +
+    S.queue.map((q, i) => `<tr><td>${OSH.dmyShort(q.t.date)}</td><td>${h(q.t.desc)}<div class="muted small">${h(q.why)}</div></td><td class="n">${money(q.t.amt)}</td>
+      <td><input id="qc${i}" list="catList" value="${q.cat === OSH.UNCAT ? "" : h(q.cat)}" placeholder="בחרו או הקלידו" aria-label="קטגוריה"></td>
+      <td><input id="qs${i}" value="${h(q.sub)}" aria-label="תת-קטגוריה"></td>
+      <td><button class="btn small" data-approve="${i}">אישור</button></td></tr>`).join("") + "</tbody>";
+}
+$("#queueTable").addEventListener("click", e => {
+  const b = e.target.closest("[data-approve]"); if (!b) return;
+  const i = +b.dataset.approve, c = $("#qc" + i).value.trim(), s = $("#qs" + i).value.trim();
+  if (!c) { $("#qc" + i).focus(); return; }
+  S.approved.push(OSH.ruleFromApproval(S.queue[i].t, c, s)); saveApproved(); recategorize();
+});
+$("#clearRules").addEventListener("click", () => { S.approved = []; saveApproved(); if (S.txns) recategorize(); else renderQueue(); });
+function renderPatterns() {
+  const ps = S.patterns.filter(p => p.kind !== "one_off");
+  const rule = { same: "באותו יום", forward: "קדימה", back: "אחורה" };
+  $("#patTable").innerHTML = `<thead><tr><th>מנפיק</th><th>סוג</th><th>יום בחודש</th><th>סכום אופייני</th><th>שישי</th><th>שבת/חג</th><th>סכומים לפי חודש</th></tr></thead><tbody>` +
+    ps.map(p => `<tr><td>${h(p.cp)}</td><td><span class="pill">${OSH.KIND_HE[p.kind]}</span></td><td class="n">${p.dom}</td><td class="n">${money(p.typical)}</td>
+      <td>${rule[p.fri]}${p.learned ? "" : " <span class='muted small'>(ברירת מחדל)</span>"}</td><td>${rule[p.closed]}</td>
+      <td class="small">${Object.entries(p.byMonth).map(([m, a]) => `${m.slice(5)}/${m.slice(2, 4)}: <span class="num">${OSH.fmt(a)}</span>`).join(" · ")}</td></tr>`).join("") + "</tbody>";
+}
+
+// ---------- params ----------
+let rateSeq = 0;
+function addRateRow(v = {}) {
+  const id = ++rateSeq, d = document.createElement("div");
+  d.className = "fields"; d.dataset.rate = id;
+  d.innerHTML = `<label class="f"><span>מתאריך</span><input id="rf${id}" type="date" value="${v.from || "2026-01-01"}"></label>
+    <label class="f"><span>חובה % שנתי</span><input id="rd${id}" class="num" inputmode="decimal" value="${v.debit || ""}" placeholder="למשל 12.5"></label>
+    <label class="f"><span>זכות % שנתי</span><input id="rc${id}" class="num" inputmode="decimal" value="${v.credit || "0"}"></label>
+    <label class="f"><span>חריגה % (רשות)</span><input id="ro${id}" class="num" inputmode="decimal" value="${v.over || ""}"></label>
+    <label class="f"><span>מקור</span><input id="rs${id}" value="${h(v.src || "")}" placeholder="הודעת ריבית, תאריך"></label>
+    <div class="row" style="align-self:end"><button class="btn ghost small" data-delrate="${id}">הסרה</button></div>`;
+  $("#rateRows").appendChild(d);
+}
+$("#addRate").addEventListener("click", () => { addRateRow(); renderCalibration(); });
+$("#rateRows").addEventListener("click", e => { const b = e.target.closest("[data-delrate]"); if (b) { b.closest("[data-rate]").remove(); renderCalibration(); } });
+function readRates(container) {
+  return [...container.querySelectorAll("[data-rate]")].map(d => { const i = d.dataset.rate; return { from: $("#rf" + i).value, debit: $("#rd" + i).value.trim(), credit: $("#rc" + i).value.trim(), over: $("#ro" + i).value.trim(), src: $("#rs" + i)?.value || "" }; });
+}
+function params() {
+  return OSH.makeParams({ feeRate: $("#feeRate").value.trim(), freeQuota: $("#feeFree").value.trim() || "0", rates: readRates($("#rateRows")), limit: $("#limit").value.trim() });
+}
+["#feeRate", "#feeFree", "#limit"].forEach(s => $(s).addEventListener("change", renderCalibration));
+$("#rateRows").addEventListener("change", renderCalibration);
+function renderCalibration() {
+  if (!S.txns) return;
+  let P; try { P = params(); } catch (e) { $("#feeCal").innerHTML = `<li class="neg">${h(e.message)}</li>`; return; }
+  const eng = new OSH.Engine(S.txns, S.rep.opening, P, cal, S.patterns);
+  const fc = eng.feeCalibration();
+  $("#feeCal").innerHTML = fc.length ? fc.map(c => `<li>${c.month.slice(5)}/${c.month.slice(0, 4)}: ${c.observed} פעולות (י) בדף, מונה באסמכתה ${c.ref ?? "—"}. מודל ${c.model != null ? money(c.model) : "—"} מול בפועל ${money(c.actual)} ${c.model == null ? "" : c.model === c.actual ? '<span class="pill ok">תואם</span>' : '<span class="pill bad">לא תואם</span>'}</li>`).join("") : "<li class='muted'>אין שורות עמלה בדף</li>";
+  const ic = eng.interestCalibration();
+  $("#intCal").innerHTML = !P.rates.length ? "<li class='muted'>לא הוזן שיעור. ריבית שנרשמה בדף תישאר כפי שהיא בכל תרחיש.</li>" :
+    ic.length ? ic.map(c => `<li>${OSH.dmy(c.start)}–${OSH.dmy(c.end)}${c.partial ? " <span class='muted'>(תקופה חלקית בדף)</span>" : ""}: מודל ${money(c.model)} מול בפועל ${money(c.actual)}, טעות ${c.errPermille == null ? "—" : (c.errPermille / 10).toFixed(1) + "%"}</li>`).join("") : "<li class='muted'>אין חיובי ריבית בדף לכייל מולם</li>";
+  const full = ic.filter(c => !c.partial);
+  const pill = $("#intPill");
+  if (!P.rates.length) { pill.className = "pill"; pill.textContent = "לא הוזן"; }
+  else if (!full.length) { pill.className = "pill est"; pill.textContent = "הערכה: אין תקופה מלאה לכיול"; }
+  else if (full.some(c => Math.abs(c.errPermille) > 50)) { pill.className = "pill est"; pill.textContent = "הערכה: טעות כיול מעל 5%"; }
+  else { pill.className = "pill ok"; pill.textContent = "מכויל"; }
+}
+
+// ---------- scenario ----------
+const TYPE_HE = { change: "שינוי סכום", remove: "ביטול הוראת קבע", add: "הוראת קבע חדשה", oneoff: "אירוע חד-פעמי", loan: "פירעון/מחזור הלוואה", rate: "שינוי ריבית" };
+let dseq = 0;
+function selectorOptions() {
+  const cats = [...new Set(S.txns ? S.txns.map(t => t.cat + "\u0001" + t.sub) : [])].sort();
+  const opts = [`<option value="">— בחרו —</option>`];
+  for (const k of [...new Set((S.txns || []).map(t => t.cat))].sort()) opts.push(`<option value="c\u0002${h(k)}">קטגוריה: ${h(k)}</option>`);
+  for (const k of cats) { const [c, s] = k.split("\u0001"); if (s) opts.push(`<option value="s\u0002${h(c)}\u0002${h(s)}">${h(c)} / ${h(s)}</option>`); }
+  for (const p of S.patterns.filter(p => p.kind !== "one_off")) opts.push(`<option value="r\u0002${p.id}">מנפיק: ${h(p.cp)}</option>`);
+  return opts.join("");
+}
+function addDelta(type, v = {}) { S.deltas.push({ id: ++dseq, type, v }); renderDeltas(); }
+function selField(d) {
+  return `<label class="f" style="grid-column:span 2"><span>על אילו תנועות</span><select data-k="sel">${selectorOptions()}</select></label>`;
+}
+function deltaBody(d) {
+  const t = d.type;
+  const range = `<label class="f"><span>מתאריך</span><input type="date" data-k="start"></label><label class="f"><span>עד תאריך</span><input type="date" data-k="end"></label>`;
+  if (t === "change") return selField(d) + `<label class="f"><span>שינוי באחוזים</span><input class="num" data-k="pct" inputmode="decimal" placeholder="10 או ‎-15"></label><label class="f"><span>או סכום לכל תנועה (₪)</span><input class="num" data-k="amount" inputmode="decimal" placeholder="500"></label>` + range;
+  if (t === "remove") return selField(d) + range;
+  if (t === "add") return `<label class="f" style="grid-column:span 2"><span>תיאור</span><input data-k="description" value="הוראת קבע חדשה"></label><label class="f"><span>סכום (₪, חובה במינוס)</span><input class="num" data-k="amount" value="-500"></label><label class="f"><span>יום בחודש</span><input class="num" type="number" min="1" max="31" data-k="dom" value="10"></label><label class="f"><span>ערוץ</span><select data-k="ch"><option value="">רגיל</option><option value="direct">(י) ערוץ ישיר</option><option value="banker">(פ) בנקאי</option></select></label><label class="f"><span>אם נופל בשישי</span><select data-k="fri"><option value="same">באותו יום</option><option value="forward">ליום ראשון</option><option value="back">ליום חמישי</option></select></label>` + range;
+  if (t === "oneoff") return `<label class="f" style="grid-column:span 2"><span>תיאור</span><input data-k="description" value="אירוע חד-פעמי"></label><label class="f"><span>תאריך</span><input type="date" data-k="date"></label><label class="f"><span>סכום (₪, חובה במינוס)</span><input class="num" data-k="amount" value="3000"></label>`;
+  if (t === "loan") return selField(d) + `<label class="f"><span>החל מ</span><input type="date" data-k="start"></label><label class="f"><span>סכום פירעון (₪, רשות)</span><input class="num" data-k="payoff"></label><label class="f" style="grid-column:1/-1"><span>לוח סילוקין מהלקוח: שורה לכל תשלום, "תאריך,סכום" (למשל 2026-08-20,900)</span><textarea data-k="schedule" rows="3"></textarea></label>`;
+  if (t === "rate") return `<label class="f"><span>מתאריך</span><input type="date" data-k="from" value="2026-01-01"></label><label class="f"><span>חובה % שנתי חדש</span><input class="num" data-k="debit"></label><label class="f"><span>זכות %</span><input class="num" data-k="credit" value="0"></label><label class="f"><span>חריגה %</span><input class="num" data-k="over"></label>`;
+}
+function renderDeltas() {
+  const box = $("#deltas");
+  if (!S.deltas.length) { box.innerHTML = `<p class="muted small">אין שינויים. תרחיש בלי שינויים הוא הבסיס עצמו.</p>`; return; }
+  box.innerHTML = S.deltas.map(d => `<div class="delta" data-d="${d.id}"><header><b>${TYPE_HE[d.type]}</b><button class="btn ghost small" data-del="${d.id}">הסרה</button></header><div class="fields">${deltaBody(d)}</div></div>`).join("");
+  for (const d of S.deltas) { const el = box.querySelector(`[data-d="${d.id}"]`); for (const [k, v] of Object.entries(d.v)) { const f = el.querySelector(`[data-k="${k}"]`); if (f) f.value = v; } }
+}
+$("#deltas").addEventListener("input", e => { const el = e.target.closest("[data-d]"); if (!el || !e.target.dataset.k) return; S.deltas.find(d => d.id == el.dataset.d).v[e.target.dataset.k] = e.target.value; });
+$("#deltas").addEventListener("click", e => { const b = e.target.closest("[data-del]"); if (b) { S.deltas = S.deltas.filter(d => d.id != b.dataset.del); renderDeltas(); } });
+$$("[data-add]").forEach(b => b.addEventListener("click", () => addDelta(b.dataset.add)));
+function toSelector(v) {
+  if (!v) throw new Error("בחרו על אילו תנועות השינוי חל");
+  const [k, a, b] = v.split("\u0002");
+  if (k === "c") return { category: a };
+  if (k === "s") return { category: a, subcategory: b };
+  const p = S.patterns.find(p => p.id === a); return { rid: a, ridLabel: p ? p.cp : a };
+}
+function buildDeltas() {
+  return S.deltas.map(({ type, v }) => {
+    const label = TYPE_HE[type] + (v.description ? `: ${v.description}` : "");
+    const range = { start: v.start || null, end: v.end || null };
+    if (type === "change") {
+      if (!(v.pct || "").trim() && !(v.amount || "").trim()) throw new Error("בשינוי סכום צריך אחוז או סכום");
+      if ((v.pct || "").trim() && (v.amount || "").trim()) throw new Error("בשינוי סכום ממלאים אחוז או סכום, לא את שניהם");
+      OSH[(v.pct || "").trim() ? "parseScaled" : "fromShekels"]((v.pct || v.amount).trim());
+      const sel = toSelector(v.sel);
+      return { type, select: sel, pct: (v.pct || "").trim() || null, amount: (v.amount || "").trim() || null, ...range,
+        label: `${(v.pct || "").trim() ? (v.pct.trim().startsWith("-") ? "" : "+") + v.pct.trim() + "%" : OSH.fmt(OSH.fromShekels(v.amount.trim())) + " ₪ לתנועה"} על ${selLabel(sel)}` };
+    }
+    if (type === "remove") { const sel = toSelector(v.sel); return { type, select: sel, ...range, label: `ביטול ${selLabel(sel)}` }; }
+    if (type === "add") { OSH.fromShekels(v.amount ?? "-500"); return { type, description: v.description || "הוראת קבע חדשה", amount: v.amount ?? "-500", dom: +(v.dom || 10), ch: v.ch || null, fri: v.fri || "same", ...range, label }; }
+    if (type === "oneoff") { if (!v.date) throw new Error("באירוע חד-פעמי צריך תאריך"); OSH.fromShekels(v.amount ?? "3000"); return { type, date: v.date, amount: v.amount ?? "3000", description: v.description || "אירוע חד-פעמי", label }; }
+    if (type === "loan") {
+      const sel = toSelector(v.sel); if (!v.start) throw new Error("בפירעון הלוואה צריך תאריך התחלה");
+      const schedule = (v.schedule || "").split(/\n/).map(s => s.trim()).filter(Boolean).map(line => { const [d, a] = line.split(","); if (!/^\d{4}-\d{2}-\d{2}$/.test((d || "").trim())) throw new Error(`שורה לא חוקית בלוח הסילוקין: ${line}`); return [d.trim(), Math.abs(OSH.parseAmount(a))]; });
+      return { type, select: sel, start: v.start, payoff: v.payoff || null, schedule, label: `לוח סילוקין חדש במקום ${selLabel(sel)}` };
+    }
+    if (type === "rate") { if (!(v.debit || "").trim()) throw new Error("בשינוי ריבית צריך שיעור חובה"); const P = OSH.makeParams({ rates: [{ from: v.from || "2026-01-01", debit: v.debit, credit: v.credit || "0", over: v.over || "" }] }); return { type, rates: P.rates, label: `ריבית חובה ${v.debit}% מ-${OSH.dmy(v.from || "2026-01-01")}` }; }
+  });
+}
+const selLabel = s => s.ridLabel ? `"${s.ridLabel}"` : s.subcategory ? `"${s.category} / ${s.subcategory}"` : `קטגוריה "${s.category}"`;
+$("#runBtn").addEventListener("click", () => run(true));
+function run(jump) {
+  const msg = $("#runMsg"); msg.className = "small"; msg.textContent = "";
+  try {
+    const P = params(), deltas = buildDeltas();
+    const sc = { name: $("#scName").value.trim() || "תרחיש", mode: $("#scMode").value, months: Math.max(1, Math.min(24, +$("#scMonths").value || 3)), deltas };
+    const eng = new OSH.Engine(S.txns, S.rep.opening, P, cal, S.patterns);
+    const id = OSH.identityMismatches(eng.run({ name: "בסיס", deltas: [] }), S.txns);
+    if (id.length) throw new Error("הסימולטור לא משחזר את הדף, ולכן אסור להריץ תרחישים: " + id.slice(0, 3).join("; "));
+    const base = eng.run({ name: "בסיס", mode: sc.mode, months: sc.months, deltas: [] }), scen = eng.run(sc);
+    S.out = { base, scen, P, lines: deltas.map(d => d.label), eng };
+    renderResults(); renderStatement(); lockResults(true);
+    msg.innerHTML = `<span class="pill ok">שחזור הדף זהה לאגורה</span>`;
+    if (jump) showTab("results");
+  } catch (e) { msg.className = "small neg"; msg.textContent = e.message; }
+}
+
+// ---------- results ----------
+function chart(base, scen, lim) {
+  const days = Object.keys(scen.daily), vals = [...Object.values(base.daily), ...Object.values(scen.daily), 0, ...(lim ? [-lim] : [])];
+  const lo = Math.min(...vals), hi = Math.max(...vals), span = (hi - lo) || 1;
+  const W = 900, H = 300, L = 92, R = 16, T = 16, B = 30, n = Math.max(1, days.length - 1), idx = Object.fromEntries(days.map((d, i) => [d, i]));
+  const X = d => L + idx[d] * (W - L - R) / n, Y = v => T + (hi - v) * (H - T - B) / span;
+  const line = (res, cssVar, dash) => `<polyline fill="none" stroke="var(${cssVar})" stroke-width="2" ${dash ? 'stroke-dasharray="6 4"' : ""} stroke-linejoin="round" points="${Object.entries(res.daily).filter(([d]) => d in idx).map(([d, v]) => `${X(d).toFixed(1)},${Y(v).toFixed(1)}`).join(" ")}"/>`;
+  const step = Math.pow(10, Math.floor(Math.log10(span / 4))), nice = [1, 2, 5, 10].map(m => m * step).find(s => span / s <= 5) || step * 10;
+  let ticks = ""; for (let v = Math.ceil(lo / nice) * nice; v <= hi; v += nice) ticks += `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width="${v === 0 ? 1.5 : .6}"/><text x="${L - 6}" y="${Y(v) + 4}" text-anchor="end">${OSH.fmt(v).replace(/\.00$/, "")}</text>`;
+  let months = ""; for (const d of days) if (d.endsWith("-01")) months += `<line x1="${X(d)}" x2="${X(d)}" y1="${T}" y2="${H - B}" stroke="var(--line)" stroke-dasharray="2 4"/><text x="${X(d) + 4}" y="${H - B + 16}">${d.slice(5, 7)}/${d.slice(2, 4)}</text>`;
+  const proj = scen.projFrom && scen.projFrom in idx ? `<rect x="${X(scen.projFrom)}" y="${T}" width="${W - R - X(scen.projFrom)}" height="${H - T - B}" fill="var(--mark)" opacity=".55"/><text x="${X(scen.projFrom) + 4}" y="${T + 12}">הקרנה</text>` : "";
+  const limL = lim ? `<line x1="${L}" x2="${W - R}" y1="${Y(-lim)}" y2="${Y(-lim)}" stroke="var(--neg)" stroke-dasharray="4 4"/><text x="${W - R}" y="${Y(-lim) - 5}" text-anchor="end" style="fill:var(--neg)">מסגרת ${OSH.fmt(-lim)}</text>` : "";
+  const [md, mv] = OSH.minBal(scen);
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="יתרה יומית, בסיס מול תרחיש" direction="ltr">${proj}${ticks}${months}${limL}${line(base, "--muted", true)}${line(scen, "--accent")}<circle cx="${X(md)}" cy="${Y(mv)}" r="4" fill="var(--accent)"/><text x="${X(md) + 7}" y="${Y(mv) + 4}">${OSH.fmt(mv)}</text></svg>
+    <p class="muted small">קו מלא: תרחיש · קו מקווקו: בסיס · הנקודה: היתרה הנמוכה בתרחיש (${OSH.dmy(md)})</p>`;
+}
+function stat(k, b, s, isMoney = true, note = "") {
+  const f = v => v == null ? "—" : isMoney ? OSH.fmt(v) : String(v), d = b == null || s == null ? null : s - b;
+  return `<div class="stat"><span class="k">${k}</span><span class="v ${isMoney ? cls(s) : ""}">${f(s)}</span><span class="d">בסיס <span class="num">${f(b)}</span> · הפרש <span class="num ${d ? cls(isMoney ? d : -d) : ""}">${d == null ? "—" : (d > 0 ? "+" : "") + f(d)}</span>${note ? " · " + note : ""}</span></div>`;
+}
+function renderResults() {
+  const { base, scen, P, lines } = S.out, lim = P.limit;
+  const sec = [];
+  for (const [k, lbl] of [["direct_channel_fee", "עמלת ערוץ ישיר"], ["interest", "ריבית"]]) {
+    const by = res => { const o = {}; OSH.rowsOfRes(res).filter(r => r.kind === k).forEach(r => o[r.date] = (o[r.date] || 0) + r.amt); return o; };
+    const b = by(base), s = by(scen);
+    for (const d of [...new Set([...Object.keys(b), ...Object.keys(s)])].sort()) sec.push(`<tr><td>${lbl}</td><td>${OSH.dmy(d)}</td><td class="n">${money(b[d] || 0)}</td><td class="n">${money(s[d] || 0)}</td><td class="n">${money((s[d] || 0) - (b[d] || 0))}</td></tr>`);
+  }
+  if (scen.unposted || base.unposted) sec.push(`<tr><td>ריבית שנצברה ועוד לא נרשמה</td><td>עד ${OSH.dmy(scen.end)}</td><td class="n">${money(base.unposted)}</td><td class="n">${money(scen.unposted)}</td><td class="n">${money(scen.unposted - base.unposted)}</td></tr>`);
+  const [bmd, bm] = OSH.minBal(base), [smd, sm] = OSH.minBal(scen);
+  $("#results").innerHTML = `<div class="panel">
+    <div class="row" style="justify-content:space-between">
+      <div><h2>${h(scen.name)}</h2><p class="muted small">${OSH.dmy(scen.start)}–${OSH.dmy(scen.end)} · ${scen.mode === "forward" ? "הקרנה קדימה (הערכה)" : "מה היה קורה"} ${scen.estimate && P.rates.length ? '<span class="pill est">ריבית: הערכה</span>' : ""}</p></div>
+      <div class="row"><button class="btn" id="dlXlsx">שמירה כ-Excel</button><span class="muted small" id="dlNote"></span></div>
+    </div>
+    <div class="stats">
+      ${stat("יתרת סגירה", OSH.closing(base), OSH.closing(scen))}
+      ${stat("יתרה נמוכה ביותר", bm, sm, true, OSH.dmy(smd))}
+      ${stat("ימים מתחת למסגרת", OSH.daysOver(base, lim), OSH.daysOver(scen, lim), false, lim == null ? "מסגרת לא הוזנה" : "")}
+      ${stat("עלות ריבית", OSH.totalOf(base, "interest"), OSH.totalOf(scen, "interest"), true, P.rates.length ? "" : "לא חושבה מחדש")}
+      ${stat("עמלות ערוץ ישיר", OSH.totalOf(base, "direct_channel_fee"), OSH.totalOf(scen, "direct_channel_fee"))}
+    </div>
+    <div class="box"><header><h2>יתרה יומית</h2></header>${chart(base, scen, lim)}</div>
+    <div class="grid2">
+      <div class="box"><header><h2>מה השתנה</h2></header><ul class="plain">${lines.map(l => `<li>${h(l)}</li>`).join("") || "<li class='muted'>ללא שינויים (בסיס)</li>"}</ul>
+        <h3>הערות והנחות</h3><ul class="plain small">${scen.notes.map(n => `<li>${h(n)}</li>`).join("") || "<li class='muted'>אין</li>"}</ul></div>
+      <div class="box"><header><h2>השפעות משניות</h2></header>
+        <div class="scroll"><table><thead><tr><th>רכיב</th><th>רישום</th><th>בסיס</th><th>תרחיש</th><th>הפרש</th></tr></thead><tbody>${sec.join("") || "<tr><td colspan='5' class='muted'>אין</td></tr>"}</tbody></table></div></div>
+    </div></div>`;
+  $("#dlXlsx").addEventListener("click", exportXlsx);
+}
+
+// ---------- simulated statement ----------
+function statementTable(res) {
+  const mark = { modified: " ✱", added: " ＋", projected: " ~", fee: " ~", interest: " ~" };
+  const out = [];
+  for (const day of [...res.days].reverse()) [...day.rows].reverse().forEach((r, i) => out.push(
+    `<tr class="${[r.origin !== "historical" ? "chg" : "", i === 0 ? "daystart" : ""].join(" ")}"><td>${OSH.dmyShort(r.date)}</td><td></td><td>${r.ch === "direct" ? "(י) " : r.ch === "banker" ? "(פ) " : ""}${h(r.desc.replace(/\d[\d\- /]{6,}\d/g, m => "•".repeat(Math.max(0, m.replace(/\D/g, "").length - 4)) + m.replace(/\D/g, "").slice(-4)))}${mark[r.origin] || ""}</td><td class="n">${money(r.amt)}</td><td class="n">${i === 0 ? money(day.bal) : ""}</td><td class="n">${h(r.ref)}</td></tr>`));
+  return `<table><thead><tr><th colspan="6" style="color:var(--neg);text-align:center;background:transparent">${WM}</th></tr><tr><th>תאריך</th><th>תאריך ערך</th><th>סוג תנועה</th><th>זכות/חובה</th><th>יתרה</th><th>אסמכתה</th></tr></thead><tbody>${out.join("")}</tbody></table>`;
+}
+function renderStatement() {
+  const s = S.out.scen;
+  $("#stmt").innerHTML = `<div class="stmt"><div class="wm" aria-hidden="true"><span>${WM}</span></div><div class="panel" style="gap:12px">
+    <div class="flag">${WM}</div><div><h2>סימולציית תנועות בחשבון: ${h(s.name)}</h2><p class="muted small">${OSH.dmy(s.start)}–${OSH.dmy(s.end)}${s.projFrom ? ` · מ-${OSH.dmy(s.projFrom)} הקרנה (הערכה)` : ""}</p></div>
+    <div class="scroll">${statementTable(s)}</div>
+    <p class="muted small">✱ סכום שונה בתרחיש · ＋ תנועה שנוספה · ~ חושב או הוקרן (הערכה) · תאריך ערך לא מופיע בדף המקור · יתרת פתיחה ${OSH.fmt(s.opening)}. הופק בכלי סימולציה ואינו דף חשבון.</p></div></div>`;
+}
+function statementDoc() {
+  const s = S.out.scen;
+  const css = `body{margin:0;padding:24px 16px;font:14px/1.5 Arial,"DejaVu Sans",sans-serif;color:#1d2433;background:#fff}main{max-width:980px;margin:0 auto}
+  .wm{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}.wm span{transform:rotate(-28deg);font-size:72px;font-weight:800;color:rgba(180,35,24,.13);white-space:nowrap}
+  .flag{border:2px solid #b42318;color:#b42318;font-weight:700;text-align:center;padding:8px;border-radius:6px;margin-bottom:12px}
+  table{width:100%;border-collapse:collapse}th,td{padding:6px 8px;border-bottom:1px solid #d9dee7;text-align:right}th{background:#f5f7fa}
+  td.n{text-align:left;direction:ltr;white-space:nowrap;font-variant-numeric:tabular-nums}.neg{color:#b42318}.pos{color:#1a7f37}tr.chg td{background:#fff4d6}tr.daystart td{border-top:2px solid #d9dee7}
+  thead{display:table-header-group}tr{break-inside:avoid}.muted{color:#5b6475;font-size:12px}`;
+  return `<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>סימולציה: ${h(s.name)}</title><style>${css}</style></head><body><div class="wm"><span>${WM}</span></div><main>
+  <div class="flag">${WM}</div><h1 style="font-size:20px;margin:0 0 4px">סימולציית תנועות בחשבון: ${h(s.name)}</h1><p class="muted">${OSH.dmy(s.start)}–${OSH.dmy(s.end)}</p>
+  ${statementTable(s).replace(/<span class="num ([a-z]*)">/g, '<span class="$1">')}<p class="muted">✱ סכום שונה בתרחיש · ＋ תנועה שנוספה · ~ חושב או הוקרן (הערכה). הופק בכלי סימולציה ואינו דף חשבון.</p></main></body></html>`;
+}
+
+// ---------- Excel ----------
+function buildWorkbook() {
+  const { base, scen, P, lines, eng } = S.out, X = XLSX.utils, wb = X.book_new();
+  const sh = a => a == null ? null : Number(OSH.fmt(a, true).replace(/,/g, ""));   // שקלים לתצוגה בתא; המקור הוא אגורות שלמות
+  const NUM = "#,##0.00;[Red]-#,##0.00";
+  const cell = (v, extra = {}) => typeof v === "number" ? { t: "n", v, z: NUM, ...extra } : v == null ? null : { t: "s", v: String(v) };
+  const fcell = (f, v) => ({ t: "n", f, v, z: NUM });
+  // תנועות בפועל
+  const act = [["תאריך", "חודש", "סוג תנועה", "ערוץ", "קטגוריה", "תת-קטגוריה", "אסמכתה", "זכות/חובה", "יתרה רצה", "יתרה בדף", "בדיקה"],
+    [null, null, "יתרת פתיחה (נגזרת)", null, null, null, null, null, cell(sh(base.opening)), null, null]];
+  let run = base.opening;
+  S.txns.forEach((t, i) => { const r = i + 3; run += t.amt;
+    act.push([OSH.dmy(t.date), t.date.slice(0, 7), t.desc, t.ch === "direct" ? "(י)" : t.ch === "banker" ? "(פ)" : "", t.cat, t.sub, t.ref, cell(sh(t.amt)), fcell(`I${r - 1}+H${r}`, sh(run)), t.bal != null ? cell(sh(t.bal)) : null, t.bal != null ? fcell(`ROUND(I${r}-J${r},2)`, 0) : null]); });
+  const aLast = S.txns.length + 2;
+  // תנועות תרחיש
+  const ORIG = { historical: "", modified: "שונה", added: "נוסף", fee: "עמלה מחושבת", interest: "ריבית מחושבת", projected: "הקרנה" };
+  const sc = [["תאריך", "חודש", "סוג תנועה", "ערוץ", "קטגוריה", "מקור", "הערה", "סכום בסיס", "זכות/חובה", "יתרה רצה"],
+    [null, null, "יתרת פתיחה", null, null, null, null, null, null, cell(sh(scen.opening))]];
+  let r = 2, srun = scen.opening;
+  for (const d of scen.days) for (const x of d.rows) { r++; srun += x.amt;
+    sc.push([OSH.dmy(x.date), x.date.slice(0, 7), x.desc, x.ch === "direct" ? "(י)" : x.ch === "banker" ? "(פ)" : "", x.cat, ORIG[x.origin] ?? x.origin, x.note, x.base != null ? cell(sh(x.base)) : null, cell(sh(x.amt)), fcell(`J${r - 1}+I${r}`, sh(srun))]); }
+  const sLast = r;
+  // פער לפי חודש
+  const months = [...new Set(Object.keys(scen.daily).map(d => d.slice(0, 7)))].sort();
+  const flow = (res, m) => OSH.rowsOfRes(res).filter(x => x.date.startsWith(m)).reduce((s, x) => s + x.amt, 0);
+  const gap = [["חודש", "תזרים בסיס", "תזרים תרחיש", "הפרש חודשי", "הפרש מצטבר"]]; let cum = 0;
+  months.forEach((m, i) => { const j = i + 2, b = S.txns.filter(t => t.date.startsWith(m)).reduce((a, t) => a + t.amt, 0), s = flow(scen, m); cum += s - b;
+    gap.push([m, fcell(`SUMIFS('תנועות בפועל'!$H$3:$H$${aLast},'תנועות בפועל'!$B$3:$B$${aLast},A${j})`, sh(b)),
+      fcell(`SUMIFS('תנועות תרחיש'!$I$3:$I$${sLast},'תנועות תרחיש'!$B$3:$B$${sLast},A${j})`, sh(s)), fcell(`C${j}-B${j}`, sh(s - b)), fcell(j === 2 ? `D${j}` : `E${j - 1}+D${j}`, sh(cum))]); });
+  // דפוסים
+  const pat = [["מנפיק", "כיוון", "סוג", "קטגוריה", "יום בחודש", "סכום אופייני", "כלל שישי", "כלל שבת/חג", "נלמד", "סכומים לפי חודש"]];
+  S.patterns.forEach(p => pat.push([p.cp, p.dir === "credit" ? "זכות" : "חובה", OSH.KIND_HE[p.kind], p.cat, p.dom, cell(sh(p.typical)), p.fri, p.closed, p.learned ? "כן" : "ברירת מחדל", Object.entries(p.byMonth).map(([m, a]) => `${m}: ${OSH.fmt(a)}`).join("; ")]));
+  // קטגוריות לפי חודש
+  const cats = [...new Set([...S.txns.map(t => t.cat), ...OSH.rowsOfRes(scen).map(x => x.cat).filter(Boolean)])].sort();
+  const cm = [["קטגוריה", "גרסה", ...months]]; let row = 2;
+  const col = k => String.fromCharCode(67 + k);
+  for (const c of cats) for (const [lbl, sheet, amt, last] of [["בסיס", "תנועות בפועל", "H", aLast], ["תרחיש", "תנועות תרחיש", "I", sLast]]) {
+    cm.push([c, lbl, ...months.map((m, k) => fcell(`SUMIFS('${sheet}'!$${amt}$3:$${amt}$${last},'${sheet}'!$E$3:$E$${last},$A${row},'${sheet}'!$B$3:$B$${last},${col(k)}$1)`,
+      sh((lbl === "בסיס" ? S.txns.map(t => ({ date: t.date, cat: t.cat, amt: t.amt })) : OSH.rowsOfRes(scen)).filter(x => x.cat === c && x.date.startsWith(m)).reduce((a, x) => a + x.amt, 0))))]); row++; }
+  // הנחות ופרמטרים
+  const pr = [["פרמטר", "ערך", "מקור"],
+    ["עמלת ערוץ ישיר לפעולה", P.fee ? OSH.fmt(P.fee.rate) + " ₪" : "לא הוגדר", $("#feeSrc").value],
+    ["פעולות חינם בחודש", P.fee ? String(P.fee.free) : "", ""],
+    ...readRates($("#rateRows")).filter(x => x.debit).map(x => [`ריבית מ-${OSH.dmy(x.from)}`, `חובה ${x.debit}% · זכות ${x.credit || 0}%${x.over ? ` · חריגה ${x.over}%` : ""}`, x.src]),
+    ...(P.rates.length ? [] : [["ריבית עו\"ש", "לא הוזנה: הריבית שנרשמה נשארה, ההשפעה המשנית לא חושבה", ""]]),
+    ["מסגרת אשראי", P.limit != null ? OSH.fmt(P.limit) + " ₪" : "לא הוזנה", $("#limitSrc").value],
+    [], ["תרחיש", scen.name, scen.mode === "forward" ? "הקרנה (הערכה)" : "Replay"], ...lines.map(l => ["שינוי", l, ""]),
+    [], ["כיול עמלה", "חודש · פעולות בדף / מונה", "מודל מול בפועל"],
+    ...eng.feeCalibration().map(c => ["", `${c.month} · ${c.observed} / ${c.ref ?? "—"}`, c.model == null ? "—" : `${OSH.fmt(c.model)} מול ${OSH.fmt(c.actual)}`]),
+    [], ["כיול ריבית", "תקופה", "מודל מול בפועל, טעות"],
+    ...eng.interestCalibration().map(c => ["", `${OSH.dmy(c.start)}–${OSH.dmy(c.end)}${c.partial ? " (חלקית)" : ""}`, `${OSH.fmt(c.model)} מול ${OSH.fmt(c.actual)}, ${c.errPermille == null ? "—" : (c.errPermille / 10).toFixed(1) + "%"}`]),
+    [], ...scen.notes.map(n => ["הערה", n, ""])];
+  // יומן ולידציה
+  const vl = [["רשומה"], ...S.rep.log.map(x => [x]), [`ימים שנבדקו: ${S.rep.daysChecked}`], [`פתיחה ${OSH.fmt(S.rep.opening)} · סגירה ${OSH.fmt(S.rep.closing)}`], ["תקין: כל יתרות סוף היום מתיישבות"], ["בדיקת זהות: תרחיש ריק משחזר את הדף לאגורה"]];
+  // סיכום
+  const histClose = S.rep.closing, minA = Math.min(...S.txns.reduce((a, t) => (a.push((a.at(-1) ?? base.opening) + t.amt), a), [])),
+    minS = Math.min(...OSH.rowsOfRes(scen).reduce((a, x) => (a.push((a.at(-1) ?? scen.opening) + x.amt), a), []));
+  const sum = [["מדד", "בסיס", "תרחיש", "הפרש", "הערה"],
+    ["יתרת פתיחה", fcell("'תנועות בפועל'!I2", sh(base.opening)), fcell("'תנועות תרחיש'!J2", sh(scen.opening)), fcell("C2-B2", 0), ""],
+    ["יתרת סגירה", fcell(`'תנועות בפועל'!I${aLast}`, sh(histClose)), fcell(`'תנועות תרחיש'!J${sLast}`, sh(OSH.closing(scen))), fcell("C3-B3", sh(OSH.closing(scen) - histClose)), scen.mode === "forward" ? "בסיס = הדף; תרחיש כולל הקרנה" : ""],
+    ["יתרה נמוכה (ימי תנועה)", fcell(`MIN('תנועות בפועל'!I3:I${aLast})`, sh(minA)), fcell(`MIN('תנועות תרחיש'!J3:J${sLast})`, sh(minS)), fcell("C4-B4", sh(minS - minA)), ""],
+    ["עמלות ערוץ ישיר", cell(sh(OSH.totalOf(base, "direct_channel_fee"))), cell(sh(OSH.totalOf(scen, "direct_channel_fee"))), fcell("C5-B5", sh(OSH.totalOf(scen, "direct_channel_fee") - OSH.totalOf(base, "direct_channel_fee"))), "חושב בכלי"],
+    ["ריבית", cell(sh(OSH.totalOf(base, "interest"))), cell(sh(OSH.totalOf(scen, "interest"))), fcell("C6-B6", sh(OSH.totalOf(scen, "interest") - OSH.totalOf(base, "interest"))), scen.estimate ? "הערכה" : "מכויל"],
+    ["ימים מתחת למסגרת", OSH.daysOver(base, P.limit) ?? "—", OSH.daysOver(scen, P.limit) ?? "—", "", P.limit == null ? "מסגרת לא הוזנה" : "כל ימי הלוח"],
+    [], [WM]];
+  const add = (name, aoa, widths) => { const ws = X.aoa_to_sheet(aoa); ws["!cols"] = widths.map(w => ({ wch: w })); X.book_append_sheet(wb, ws, name); };
+  add("סיכום", sum, [26, 16, 16, 16, 34]); add("תנועות בפועל", act, [11, 9, 32, 6, 16, 16, 10, 13, 13, 13, 8]);
+  add("תנועות תרחיש", sc, [11, 9, 32, 6, 16, 12, 36, 13, 13, 13]); add("פער", gap, [10, 15, 15, 15, 15]);
+  add("קבועות ודפוסים", pat, [28, 7, 9, 16, 9, 13, 9, 10, 10, 60]); add("קטגוריות לפי חודש", cm, [18, 8, ...months.map(() => 13)]);
+  add("הנחות ופרמטרים", pr, [26, 44, 50]); add("יומן ולידציה", vl, [100]);
+  wb.Workbook = { Views: [{ RTL: true }] };
+  return wb;
+}
+let downloads = null;
+async function save(filename, data, noteEl) {
+  if (!downloads) { noteEl.textContent = "שמירת קבצים לא זמינה בתצוגה הזו."; return; }
+  try { await downloads.save({ filename, data }); noteEl.textContent = "נשמר."; }
+  catch (e) { noteEl.textContent = e?.code === "declined" ? "השמירה בוטלה." : e?.code === "rate_limited" ? "חלון שמירה כבר פתוח. נסו שוב בעוד רגע." : "השמירה נכשלה: " + (e?.message || e); }
+}
+function exportXlsx() {
+  const note = $("#dlNote");
+  if (!window.XLSX) { note.textContent = "ספריית ה-Excel לא נטענה. נסו לרענן."; return; }
+  const buf = XLSX.write(buildWorkbook(), { type: "array", bookType: "xlsx" });
+  save(`${S.out.scen.name}.xlsx`, new Blob([buf]), note);
+}
+$("#dlHtml").addEventListener("click", () => save(`סימולציה - ${S.out.scen.name}.html`, statementDoc(), $("#dlNote2")));
+(async () => {
+  try { downloads = await window.claude?.use?.("downloads"); } catch { downloads = null; }
+  if (!downloads) { $("#dlHtml").disabled = true; $("#dlNote2").textContent = "שמירת קבצים לא זמינה בתצוגה הזו."; }
+})();
+
+// ---------- start: sample statement + example scenario ----------
+lockTabs(false); lockResults(false); renderDeltas();
+ingest([sampleStatement()], true);
+S.deltas = [{ id: ++dseq, type: "change", v: { sel: "s\u0002הכנסות\u0002משכורת", pct: "10", start: "2026-07-01" } }];
+renderDeltas(); run(false);
+</script>

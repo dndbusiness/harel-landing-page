@@ -6,3 +6,6 @@ data/
 access.log
 out/
 .pytest_cache/
+web/vendor/
+web/local.html
+web/osh-simulator.html
