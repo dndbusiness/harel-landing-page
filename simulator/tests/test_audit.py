@@ -39,4 +39,24 @@ def test_gap_vs_original_splits_into_carried_and_today(synthetic):
     later = [r for r in days if r.date > sal[0].date]
     assert all(r.gap == 50000 and r.gap_carried == 50000 and r.gap_today == 0 for r in later)
     h = audit_html(rep)
-    assert "יתרות מצטברות" in h and "מועבר מימים קודמים" in h
+    assert "יתרות מצטברות" in h and "נגרר מיום קודם" in h
+
+
+def test_report_vs_simulator_reference(loaded, params):
+    """הדוח נבדק מול מה שהסימולטור חישב: תנועה ששונתה ויתרה שנרשמה לא נכון מסומנות."""
+    from decimal import Decimal
+
+    from oshsim.engine.deltas import ChangeAmount, Selector
+    from oshsim.engine.simulate import Scenario
+    from oshsim.pipeline import run_scenario
+    from oshsim.validate.audit import reference_from_simulation
+    sc = Scenario("שכר", deltas=[ChangeAmount(Selector(subcategory="משכורת"), pct=Decimal(10), label="x")])
+    out = run_scenario(loaded.txns, loaded.report.opening_agorot, params, sc)
+    ref = reference_from_simulation(out.scenario, loaded.txns[-1].date)
+    assert audit(copy.deepcopy(ref), ref, "הסימולטור").unsynced_days == []      # הסימולטור מול עצמו
+    report = copy.deepcopy(ref)
+    days = [t for t in report if t.day_balance_agorot is not None]
+    days[10].day_balance_agorot += 5000                                          # יתרה אחת שנרשמה לא נכון
+    rep = audit(report, ref, "הסימולטור")
+    assert [r.date for r in rep.unsynced_days] == [days[10].date]
+    assert "לפי הסימולטור" in audit_html(rep)

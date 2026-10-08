@@ -165,29 +165,46 @@ def cmd_simulate(args):
 
 def cmd_audit(args):
     from .ingest.merge import load_statement
-    from .outputs.audit_html import audit_html
+    from .outputs.audit_html import _in, audit_html
     from .outputs.html import html_to_pdf
-    from .validate.audit import audit
+    from .validate.audit import audit, reference_from_simulation
     st = load_statement(args.file)
-    orig = load_statement(args.original) if args.original else None
-    rep = audit(st.transactions, orig.transactions if orig else None)
-    out = Path(args.out or Path(args.file).with_name(Path(args.file).stem + "_audit.html"))
-    out.write_text(audit_html(rep, source_name=Path(args.file).name,
-                              original_name=Path(args.original).name if args.original else ""), encoding="utf-8")
+    ref, label, ref_name = None, "המקור", ""
+    if args.scenario:
+        # הייחוס: מה שהסימולטור מחשב לתרחיש, על נתוני הלקוח
+        from .pipeline import run_scenario
+        if not args.client:
+            print("--scenario דורש --client", file=sys.stderr)
+            return 1
+        ws = _ws(args)
+        txns, opening, _log, _hint = _load(ws)
+        scen = Scenario.load(args.scenario)
+        out = run_scenario(txns, opening, Params.load(Path(args.client) / "params.yaml"), scen, Path(args.client))
+        ref, label, ref_name = reference_from_simulation(out.scenario, txns[-1].date), "הסימולטור", f"הסימולטור ({scen.name})"
+    elif args.original:
+        ref, ref_name = load_statement(args.original).transactions, Path(args.original).name
+    rep = audit(st.transactions, ref, label)
+    out_path = Path(args.out or Path(args.file).with_name(Path(args.file).stem + "_audit.html"))
+    out_path.write_text(audit_html(rep, source_name=Path(args.file).name, original_name=ref_name), encoding="utf-8")
     if args.pdf:
-        html_to_pdf(out, out.with_suffix(".pdf"))
-    print(f"{len(st.transactions)} תנועות, {rep.days_checked} ימים עם יתרה בדף")
-    if rep.ok:
-        print("אין שגיאות חישוב: כל יתרה = היתרה הקודמת + תנועות היום")
-    for r in rep.errors:
-        print(f"שגיאה {r.date:%d/%m/%Y}: בדף {fmt(r.stated)}, צפוי {fmt(r.expected_day)}, פער {fmt(r.error)}")
+        html_to_pdf(out_path, out_path.with_suffix(".pdf"))
+    print(f"{len(st.transactions)} תנועות, {rep.days_checked} ימים עם יתרה בדוח")
     if rep.has_original:
-        for r in rep.rows:
-            if r.day_end and (r.gap or r.gap_today):
-                print(f"{r.date:%d/%m}: פער מהמקור {fmt(r.gap)} = מועבר {fmt(r.gap_carried)} + היום {fmt(r.gap_today)}"
-                      + (f" + שגיאה {fmt(r.error)}" if r.error else ""))
-    print(f"דוח: {out}")
-    return 0 if rep.ok else 4
+        changed = [r for r in rep.rows if r.status == "changed"]
+        for r in changed:
+            print(f"תנועה שונה {r.date:%d/%m} {r.description}: בדוח {fmt(r.amount)}, {_in(label)} {fmt(r.orig_amount)}")
+        for r in rep.unsynced_days:
+            print(f"פער {r.date:%d/%m}: בדוח {fmt(r.stated)}, לפי {label} {fmt(r.orig_stated)}, פער {fmt(r.gap)}")
+        if not changed and not rep.unsynced_days:
+            print(f"מסונכרן: כל היתרות זהות ל{label}")
+    else:
+        bad = [r for r in rep.rows if r.day_end and r.cum_error]
+        for r in bad:
+            print(f"פער {r.date:%d/%m}: בדוח {fmt(r.stated)}, לפי התנועות {fmt(r.running)}, פער {fmt(r.cum_error)}")
+        if not bad:
+            print("אין שגיאות: כל יתרה שווה לסכום המצטבר של התנועות")
+    print(f"דוח: {out_path}")
+    return 0 if (rep.ok and not rep.unsynced_days) else 4
 
 
 def cmd_purge(args):
@@ -231,7 +248,9 @@ def main(argv=None):
     p.set_defaults(fn=cmd_simulate)
 
     p = sp.add_parser("audit", help="בדיקת יתרות בדף (וגם פירוק הפער מול דף מקורי)")
-    p.add_argument("file"); p.add_argument("--original", help="הדף המקורי, לפירוק הפער")
+    p.add_argument("file"); p.add_argument("--original", help="דף ייחוס (למשל הדף המקורי)")
+    p.add_argument("--client", help="תיקיית הלקוח (עם --scenario)")
+    p.add_argument("--scenario", help="תרחיש: בודקים את הדוח מול מה שהסימולטור מחשב לו")
     p.add_argument("--out"); p.add_argument("--pdf", action="store_true")
     p.set_defaults(fn=cmd_audit)
 

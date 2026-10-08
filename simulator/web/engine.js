@@ -593,7 +593,7 @@ const OSH = (() => {
     const first = txns.find(t => t.bal != null);
     return first.bal - txns.filter(t => t.date <= first.date).reduce((s, t) => s + t.amt, 0);
   }
-  function audit(txns, original) {
+  function audit(txns, original, label = "המקור") {
     const opening = derivedOpening(original || txns);
     const origBy = new Map(), origDay = {};
     if (original) { auditKeys(original).forEach((k, i) => origBy.set(k, original[i])); original.forEach(t => { if (t.bal != null) origDay[t.date] = t.bal; }); }
@@ -614,12 +614,12 @@ const OSH = (() => {
       const expected = prevStated + sum;
       if (original) { last.gapToday = day.reduce((s, r) => s + r.amt - (r.origAmt || 0), 0) + (removedByDay[d] || 0); last.gapCarried = prevGap; }
       if (stated != null) {
-        checked++; last.expected = expected; last.error = stated - expected; if (last.error) errors.push(last);
+        checked++; last.expected = expected; last.error = stated - expected; last.cumErr = stated - last.run; if (last.error) errors.push(last);
         if (original && d in origDay) { last.origStated = origDay[d]; last.gap = stated - origDay[d]; prevGap = last.gap; }
         prevStated = stated;
       } else { prevStated = expected; if (original) prevGap += last.gapToday; }
     }
-    return { rows, opening, checked, errors, removed: [...origBy.values()], hasOriginal: !!original };
+    return { rows, opening, checked, errors, removed: [...origBy.values()], hasOriginal: !!original, label };
   }
 
   const rowsOfRes = res => res.days.flatMap(d => d.rows);

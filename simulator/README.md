@@ -51,7 +51,8 @@ python3 -m oshsim purge    --client data/client1 --yes                   # מח�
 בדיקת יתרות לכל דף (מקורי, סימולציה או דף שנערך ידנית):
 
 ```bash
-python3 -m oshsim audit דף.pdf [--original מקורי.pdf] [--pdf]
+python3 -m oshsim audit דוח.pdf --client data/client1 --scenario scenarios/x.yaml [--pdf]   # מול הסימולטור
+python3 -m oshsim audit דוח.pdf [--original מקורי.pdf] [--pdf]                               # מול קובץ ייחוס
 ```
 
 לכל יום: יתרה קודמת בדף + תנועות היום מול היתרה שבדף, עם סימון ✓/✗. עם `--original` הפער

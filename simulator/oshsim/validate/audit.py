@@ -35,6 +35,7 @@ class AuditRow:
     gap: Optional[int] = None            # stated − orig_stated
     gap_carried: Optional[int] = None
     gap_today: Optional[int] = None
+    cum_error: Optional[int] = None      # stated − running: כמה היתרה בדוח רחוקה מהסכום המצטבר של התנועות
 
 
 @dataclass
@@ -46,6 +47,12 @@ class AuditReport:
     errors: list[AuditRow] = field(default_factory=list)
     removed: list[Transaction] = field(default_factory=list)
     has_original: bool = False
+    reference_label: str = "המקור"
+
+    @property
+    def unsynced_days(self) -> list["AuditRow"]:
+        """ימים שבהם היתרה בדוח שונה מהיתרה של דף הייחוס (המקור או הסימולטור)."""
+        return [r for r in self.rows if r.day_end and r.gap]
 
     @property
     def ok(self) -> bool:
@@ -77,9 +84,11 @@ def _derived_opening(txns: list[Transaction]) -> int:
     return first.day_balance_agorot - sum(t.amount_agorot for t in txns if t.date <= first.date)
 
 
-def audit(txns: list[Transaction], original: Optional[list[Transaction]] = None) -> AuditReport:
+def audit(txns: list[Transaction], original: Optional[list[Transaction]] = None,
+          reference_label: str = "המקור") -> AuditReport:
+    """original: דף הייחוס — הדף המקורי, או הדף שהסימולטור חישב (ואז reference_label="הסימולטור")."""
     if original:
-        opening, src = _derived_opening(original), "נגזרה מהדף המקורי"
+        opening, src = _derived_opening(original), f"נגזרה מ{reference_label}"
     else:
         opening, src = _derived_opening(txns), "נגזרה מהיתרה הראשונה בדף"
 
@@ -123,6 +132,7 @@ def audit(txns: list[Transaction], original: Optional[list[Transaction]] = None)
             today = sum(r.amount - (r.orig_amount or 0) for r in day) + removed_by_day.get(d, 0)
             last.gap_today, last.gap_carried = today, prev_gap
         if stated is not None:
+            last.cum_error = stated - last.running
             checked += 1
             last.expected_day, last.error = expected, stated - expected
             if last.error:
@@ -136,4 +146,16 @@ def audit(txns: list[Transaction], original: Optional[list[Transaction]] = None)
             prev_stated = expected           # יום בלי יתרה בדף — ממשיכים מהחישוב
             if original:
                 prev_gap = prev_gap + last.gap_today
-    return AuditReport(rows, opening, src, checked, errors, removed, bool(original))
+    return AuditReport(rows, opening, src, checked, errors, removed, bool(original), reference_label)
+
+
+def reference_from_simulation(result, last_date) -> list[Transaction]:
+    """הדף שהסימולטור חישב, כרשימת תנועות עם יתרת סוף יום בשורה האחרונה של כל יום."""
+    out = []
+    for day in result.days:
+        if day.date > last_date:
+            break
+        for i, r in enumerate(day.rows):
+            out.append(Transaction(r.date, r.description, r.amount, reference=r.reference, channel=r.channel,
+                                   day_balance_agorot=day.balance if i == len(day.rows) - 1 else None))
+    return out
