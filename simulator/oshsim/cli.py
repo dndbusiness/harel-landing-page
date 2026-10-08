@@ -205,7 +205,7 @@ def cmd_audit(args):
         for r in rep.unsynced_days:
             print(f"פער {r.date:%d/%m}: בדוח {fmt(r.stated)}, לפי {label} {fmt(r.orig_stated)}, פער {fmt(r.gap)}")
         if not changed and not rep.unsynced_days:
-            print(f"מסונכרן: כל היתרות זהות ל{label}")
+            print(f"מסונכרן: כל היתרות זהות ל{label[1:] if label.startswith('ה') else label}")
     else:
         bad = [r for r in rep.rows if r.day_end and r.cum_error]
         for r in bad:
