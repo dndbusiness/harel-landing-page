@@ -587,7 +587,7 @@ const OSH = (() => {
   // ---------- balance audit (port of validate/audit.py) ----------
   function auditKeys(txns) {
     const seen = {};
-    return txns.map(t => { const k = [t.date, t.desc, t.ref].join("|"); const n = seen[k] || 0; seen[k] = n + 1; return k + "|" + n; });
+    return txns.map(t => { const k = [t.date, t.ref].join("|"); const n = seen[k] || 0; seen[k] = n + 1; return k + "|" + n; });
   }
   function derivedOpening(txns) {
     const first = txns.find(t => t.bal != null);

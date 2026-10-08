@@ -65,7 +65,7 @@ def _key(txns: list[Transaction]) -> list[tuple]:
     seen: dict[tuple, int] = {}
     out = []
     for t in txns:
-        k = (t.date, t.description, t.reference)
+        k = (t.date, t.reference)              # תיאור יכול להיחתך אחרת בין דפים; תאריך+אסמכתה יציבים
         n = seen.get(k, 0)
         seen[k] = n + 1
         out.append(k + (n,))

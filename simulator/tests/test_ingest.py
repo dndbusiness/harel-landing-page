@@ -91,3 +91,12 @@ def test_balance_row_is_last_of_its_day(synthetic):
         for i, t in enumerate(txns):
             if t.day_balance_agorot is not None:
                 assert i + 1 == len(txns) or txns[i + 1].date != t.date
+
+
+def test_detached_minus_and_wrapped_text_in_amount_cells():
+    """קובץ שנערך בתוכנה אחרת: מינוס שנפרד מהמספר, ו-(י) שגלש לעמודת הסכום."""
+    from oshsim.ingest.mizrahi import MizrahiOshParser
+    row = {"page": 1, "raw": "x", "cells": {"date": "03/07/26", "description": "ישראכרט", "amount": "(י) -10,000.00",
+                                            "balance": "10,313.28 -", "reference": "6791"}}
+    t = MizrahiOshParser._to_txn(row, "f.pdf")
+    assert (t.amount_agorot, t.day_balance_agorot, t.channel) == (-1000000, -1031328, "direct")

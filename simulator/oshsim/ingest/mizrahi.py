@@ -71,6 +71,8 @@ class MizrahiOshParser:
                     body = sizes.most_common(1)[0][0]
                     lo, hi = body * MIN_TEXT_RATIO, body * MAX_TEXT_RATIO
                     page = page.filter(lambda o: o.get("object_type") != "char" or lo <= o.get("size", 0) <= hi)
+                # תו שהגופן לא מכיר ("(cid:0)", נפוץ בקובץ שנערך בתוכנה אחרת) — לא חלק מהטקסט
+                page = page.filter(lambda o: o.get("object_type") != "char" or not str(o.get("text", "")).startswith("(cid:"))
                 words = page.extract_words(x_tolerance=1.5, y_tolerance=2, keep_blank_chars=False)
                 yield pno, [_Word(w["text"], w["x0"], w["x1"], w["top"]) for w in words]
 
@@ -204,7 +206,11 @@ class MizrahiOshParser:
         c = dict(r["cells"])
         # טקסט שאינו מספר שגלש לעמודת סכום/יתרה (למשל "(י)" בתיאור שנשבר לשתי שורות) — שייך לתיאור
         for col in ("amount", "balance"):
-            toks = (c.get(col) or "").split()
+            v = c.get(col) or ""
+            # סימן מינוס שנפרד מהמספר (רווח או תו לא מוכר ביניהם) — מחברים בחזרה
+            v = re.sub(r"(^|\s)([-\u2212])\s+(?=\d)", r"\1\2", v)
+            v = re.sub(r"(\d)\s+([-\u2212])(?=\s|$)", r"\1\2", v)
+            toks = v.split()
             nums = [t for t in toks if looks_like_amount(t)]
             extra = [t for t in toks if not looks_like_amount(t)]
             if extra and len(nums) <= 1:
