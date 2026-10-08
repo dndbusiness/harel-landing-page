@@ -1,0 +1,16 @@
+# תבנית לקובץ מס שנתי. העתיקו ל-<שנה>.yaml ומלאו ממקור רשמי בלבד
+# (רשות המסים, המוסד לביטוח לאומי) — לא מהזיכרון. כל סכום כמחרוזת, לחודש.
+# ערך ריק = המחשבון מסרב לרוץ, וקלט השכר נשאר בנטו.
+year: null
+source: ""          # חובה: קישור/מסמך ותאריך עדכון
+
+income_tax_brackets_monthly:
+  # - {up_to: "...", rate_pct: "..."}
+  # - {up_to: null,  rate_pct: "..."}   # מדרגה עליונה
+credit_point_monthly_value: null
+default_credit_points: null
+
+national_insurance_brackets_monthly:    # חלק העובד
+  # - {up_to: "...", rate_pct: "..."}
+health_tax_brackets_monthly:            # חלק העובד
+  # - {up_to: "...", rate_pct: "..."}

@@ -1,0 +1,24 @@
+name: קיצוץ בכרטיס וביטול ביטוח, 3 חודשים קדימה
+mode: forward
+forward_months: 3
+deltas:
+  - type: change_amount
+    label: חיוב כרטיס −15%
+    select: {category: כרטיסי אשראי}
+    pct: -15
+  - type: remove
+    label: ביטול ביטוח בריאות
+    select: {description: "ביטוח בריאות"}
+    start: 2026-08-01
+  - type: add_recurring
+    label: חיסכון חודשי
+    description: הוראת קבע לחיסכון
+    amount: "-500.00"
+    day_of_month: 12
+    start: 2026-07-01
+    channel: direct
+  - type: one_off
+    label: מענק חד-פעמי
+    date: 2026-08-15
+    amount: "3000.00"
+    description: מענק
