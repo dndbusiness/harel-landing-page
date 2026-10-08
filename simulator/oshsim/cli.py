@@ -188,6 +188,14 @@ def cmd_audit(args):
     out_path.write_text(audit_html(rep, source_name=Path(args.file).name, original_name=ref_name), encoding="utf-8")
     if args.pdf:
         html_to_pdf(out_path, out_path.with_suffix(".pdf"))
+    if args.annotate:
+        if Path(args.file).suffix.lower() != ".pdf":
+            print("--annotate עובד רק על קובץ PDF", file=sys.stderr)
+        else:
+            from .outputs.annotate import annotate_pdf
+            marked = Path(args.file).with_name(Path(args.file).stem + "_marked.pdf")
+            n = annotate_pdf(args.file, rep, marked, against_reference=args.annotate == "reference")
+            print(f"סומנו {n} פערים על הקובץ: {marked}")
     print(f"{len(st.transactions)} תנועות, {rep.days_checked} ימים עם יתרה בדוח")
     if rep.has_original:
         changed = [r for r in rep.rows if r.status == "changed"]
@@ -252,6 +260,8 @@ def main(argv=None):
     p.add_argument("--client", help="תיקיית הלקוח (עם --scenario)")
     p.add_argument("--scenario", help="תרחיש: בודקים את הדוח מול מה שהסימולטור מחשב לו")
     p.add_argument("--out"); p.add_argument("--pdf", action="store_true")
+    p.add_argument("--annotate", choices=["report", "reference"],
+                   help="סימון הפערים על קובץ ה-PDF עצמו: report = לפי סכום התנועות בדוח, reference = לפי הייחוס/הסימולטור")
     p.set_defaults(fn=cmd_audit)
 
     p = sp.add_parser("purge", help="מחיקה מסודרת של תיקיית לקוח")

@@ -53,6 +53,7 @@ python3 -m oshsim purge    --client data/client1 --yes                   # מח�
 ```bash
 python3 -m oshsim audit דוח.pdf --client data/client1 --scenario scenarios/x.yaml [--pdf]   # מול הסימולטור
 python3 -m oshsim audit דוח.pdf [--original מקורי.pdf] [--pdf]                               # מול קובץ ייחוס
+python3 -m oshsim audit דוח.pdf ... --annotate report|reference   # מסמן את הפערים על ה-PDF עצמו (דוח_marked.pdf)
 ```
 
 לכל יום: יתרה קודמת בדף + תנועות היום מול היתרה שבדף, עם סימון ✓/✗. עם `--original` הפער

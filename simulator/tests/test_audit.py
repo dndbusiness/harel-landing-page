@@ -60,3 +60,18 @@ def test_report_vs_simulator_reference(loaded, params):
     rep = audit(report, ref, "הסימולטור")
     assert [r.date for r in rep.unsynced_days] == [days[10].date]
     assert "לפי הסימולטור" in audit_html(rep)
+
+
+def test_annotate_marks_wrong_balance_on_pdf(tmp_path, synthetic):
+    import pdfplumber
+
+    from oshsim.ingest.mizrahi import MizrahiOshParser
+    from oshsim.outputs.annotate import annotate_pdf
+    rep = audit(MizrahiOshParser().parse(synthetic["pdf"]).transactions)
+    assert annotate_pdf(synthetic["pdf"], rep, tmp_path / "clean.pdf") == 0
+    day = [r for r in rep.rows if r.day_end][5]
+    day.stated += 10000                                  # כאילו בדוח נרשמה יתרה שגויה
+    assert annotate_pdf(synthetic["pdf"], rep, tmp_path / "m.pdf") == 1
+    with pdfplumber.open(tmp_path / "m.pdf") as p:
+        assert len(p.pages) == len(pdfplumber.open(synthetic["pdf"]).pages)
+        assert sum(len(pg.rects) for pg in p.pages) >= 1
