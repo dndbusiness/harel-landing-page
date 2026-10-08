@@ -90,8 +90,27 @@ def _located_rows(pdf_path: Path):
     return out
 
 
-def annotate_pdf(src: str | Path, rep: AuditReport, dst: str | Path, against_reference: bool = False) -> int:
-    """→ מספר הסימונים. against_reference: היתרה הנכונה היא זו של הייחוס (הסימולטור), לא סכום התנועות בדוח."""
+def _desc_right_edge(pdf_path: Path) -> float:
+    """הקצה הימני של עמודת התיאור: באמצע בין מרכז "סוג תנועה" למרכז העמודה שמימינה."""
+    import pdfplumber
+    parser = MizrahiOshParser()
+    from ..ingest.mizrahi import _Word
+    with pdfplumber.open(str(pdf_path)) as pdf:
+        for page in pdf.pages:
+            words = [_Word(w["text"], w["x0"], w["x1"], w["top"]) for w in page.extract_words(x_tolerance=1.5)]
+            hdr = parser._detect_header(parser._rows(words))
+            if hdr:
+                c = hdr[1]
+                right = c.get("value_date", c.get("date"))
+                return (c["description"] + right) / 2 + 12
+    return 440.0
+
+
+def annotate_pdf(src: str | Path, rep: AuditReport, dst: str | Path, against_reference: bool = False,
+                 suggest_offset: bool = False) -> int:
+    """→ מספר הסימונים. against_reference: היתרה הנכונה היא זו של הייחוס (הסימולטור), לא סכום התנועות בדוח.
+    suggest_offset: ליד תנועה שסכומה שונה מהייחוס כותבים את תנועת הקיזוז האחת שמחזירה את הייחוס,
+    במקום את הסכום בייחוס — כך התנועה עצמה נשארת כפי שהיא בדוח."""
     from pypdf import PdfReader, PdfWriter
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
@@ -118,6 +137,7 @@ def annotate_pdf(src: str | Path, rep: AuditReport, dst: str | Path, against_ref
                 marks_by_page.setdefault(pno, []).append(("bal", bal_box, r, correct, bal_center))
                 n += 1
 
+    desc_right = _desc_right_edge(Path(src))
     writer = PdfWriter()
     total_bal = sum(1 for ms in marks_by_page.values() for m in ms if m[0] == "bal")
     for pno, page in enumerate(reader.pages):
@@ -130,14 +150,24 @@ def annotate_pdf(src: str | Path, rep: AuditReport, dst: str | Path, against_ref
             c.setFont("DejaVu", 9)
             basis = "לפי הסימולטור" if against_reference else "לפי סכום התנועות בדוח"
             c.drawRightString(W - 30, H - 16, _vis(f"סומנו {total_bal} יתרות שגויות. הערך הנכון ({basis}) כתוב באדום מתחת לכל אחת."))
+            if suggest_offset:
+                c.setFillColorRGB(0.45, 0.28, 0)
+                c.drawRightString(W - 30, H - 28, _vis("בצהוב: התנועה שנוספה מעבר לסימולטור, ומתחתיה תנועת הקיזוז האחת שמבטלת את הפער."))
         for m in marks_by_page.get(pno, []):
             if m[0] == "amt":
                 _, (x0, top, x1, bottom), r = m
                 c.setFillColorRGB(1, 0.85, 0.2, alpha=0.35)
                 c.setStrokeColorRGB(0.85, 0.6, 0)
                 c.rect(x0 - 3, H - bottom - 2, (x1 - x0) + 6, (bottom - top) + 4, fill=1, stroke=1)
+                c.setFillAlpha(1)
                 c.setFillColorRGB(0.45, 0.28, 0)
-                _label_and_number(c, x1 + 3, H - bottom - 9.5, "בסימולטור", fmt(r.orig_amount), 7)
+                if suggest_offset:
+                    # מתחת לתיאור התנועה (עמודת "סוג תנועה"), כדי לא להתנגש בתיקון היתרה באותה שורה
+                    off = r.orig_amount - r.amount
+                    _label_and_number(c, desc_right, H - bottom - 9.5, "להוסיף ביום זה תנועת קיזוז של",
+                                      ("+" if off > 0 else "") + fmt(off), 7.4)
+                else:
+                    _label_and_number(c, x1 + 3, H - bottom - 9.5, "בסימולטור", fmt(r.orig_amount), 7)
             else:
                 _, b, r, correct, center = m
                 if b is None:     # יתרה שלא נקראה — מסמנים לפי מיקום העמודה

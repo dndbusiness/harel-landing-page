@@ -194,7 +194,8 @@ def cmd_audit(args):
         else:
             from .outputs.annotate import annotate_pdf
             marked = Path(args.file).with_name(Path(args.file).stem + "_marked.pdf")
-            n = annotate_pdf(args.file, rep, marked, against_reference=args.annotate == "reference")
+            n = annotate_pdf(args.file, rep, marked, against_reference=args.annotate in ("reference", "offset"),
+                             suggest_offset=args.annotate == "offset")
             print(f"סומנו {n} פערים על הקובץ: {marked}")
     print(f"{len(st.transactions)} תנועות, {rep.days_checked} ימים עם יתרה בדוח")
     if rep.has_original:
@@ -260,8 +261,9 @@ def main(argv=None):
     p.add_argument("--client", help="תיקיית הלקוח (עם --scenario)")
     p.add_argument("--scenario", help="תרחיש: בודקים את הדוח מול מה שהסימולטור מחשב לו")
     p.add_argument("--out"); p.add_argument("--pdf", action="store_true")
-    p.add_argument("--annotate", choices=["report", "reference"],
-                   help="סימון הפערים על קובץ ה-PDF עצמו: report = לפי סכום התנועות בדוח, reference = לפי הייחוס/הסימולטור")
+    p.add_argument("--annotate", choices=["report", "reference", "offset"],
+                   help="סימון הפערים על קובץ ה-PDF עצמו: report = לפי סכום התנועות בדוח, reference = לפי הייחוס/הסימולטור, "
+                        "offset = כמו reference, ובמקום לתקן תנועה שונה — תנועת קיזוז אחת לידה")
     p.set_defaults(fn=cmd_audit)
 
     p = sp.add_parser("purge", help="מחיקה מסודרת של תיקיית לקוח")
