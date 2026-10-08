@@ -73,12 +73,17 @@ def _amt(a: int | None) -> str:
 
 
 def replica_html(txns: list[Transaction], opening: int, scen: SimResult, account_hint: str = "",
-                 period_label: str = "", generated: datetime | None = None) -> str:
+                 period_label: str = "", generated: datetime | None = None, was_label: str = "במקור",
+                 compare_to_stated: bool = False) -> str:
+    """txns: הדף שמולו מסמנים שינויים. compare_to_stated: היתרה "לפני" היא מה שרשום בדף
+    (ולא סכום התנועות שלו) — לדוח שנערך ידנית ויתרותיו לא מתיישבות."""
     rows = compare_rows(txns, opening, scen)
     days: dict = {}
     for r in rows:
         days.setdefault(r.date, []).append(r)
     old_day_bal = {r.date: r.old_balance for r in rows if r.day_end}
+    if compare_to_stated:
+        old_day_bal = {t.date: t.day_balance_agorot for t in txns if t.day_balance_agorot is not None}
 
     body = []
     n_amt = n_bal = 0
@@ -90,7 +95,7 @@ def replica_html(txns: list[Transaction], opening: int, scen: SimResult, account
             if r.status == "changed":
                 n_amt += 1
                 amt_cell = (f'<td class="amt chg">{_amt(r.new_amount)}'
-                            f'<span class="was">במקור <s class="n">{fmt(r.old_amount)}</s></span></td>')
+                            f'<span class="was">{was_label} <s class="n">{fmt(r.old_amount)}</s></span></td>')
                 desc += '<span class="mark">שונה</span>'
             elif r.status in ("added", "projected"):
                 tr_cls = "added"
@@ -104,7 +109,7 @@ def replica_html(txns: list[Transaction], opening: int, scen: SimResult, account
                 if old_b is not None and new_b != old_b:
                     n_bal += 1
                     bal_cell = (f'<td class="bal balchg">{_amt(new_b)}'
-                                f'<span class="was">במקור <s class="n">{fmt(old_b)}</s></span></td>')
+                                f'<span class="was">{was_label} <s class="n">{fmt(old_b)}</s></span></td>')
                 else:
                     bal_cell = f'<td class="bal">{_amt(new_b)}</td>'
             body.append(f'<tr class="{tr_cls}"><td>{d:%d/%m/%y}</td><td></td><td class="desc">{desc}</td>'
