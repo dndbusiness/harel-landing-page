@@ -1,0 +1,42 @@
+import copy
+
+from oshsim.ingest.csv_adapter import parse_csv
+from oshsim.outputs.audit_html import audit_html
+from oshsim.validate.audit import audit
+
+
+def test_clean_statement_has_no_errors(synthetic):
+    rep = audit(parse_csv(synthetic["csv"]).transactions)
+    assert rep.ok and rep.days_checked > 40
+    assert rep.closing_computed == rep.closing_stated == synthetic["closing"]
+
+
+def test_wrong_balance_is_caught_on_its_day(synthetic):
+    txns = copy.deepcopy(parse_csv(synthetic["csv"]).transactions)
+    rows = [t for t in txns if t.day_balance_agorot is not None]
+    bad = rows[20]
+    bad.day_balance_agorot += 10000                    # יתרה שגויה ב-100 ₪ ביום אחד
+    rep = audit(txns)
+    assert [r.date for r in rep.errors] == [bad.date, rows[21].date]
+    assert rep.errors[0].error == 10000 and rep.errors[1].error == -10000
+    assert "✗" in audit_html(rep)
+
+
+def test_gap_vs_original_splits_into_carried_and_today(synthetic):
+    orig = parse_csv(synthetic["csv"]).transactions
+    new = copy.deepcopy(orig)
+    sal = [t for t in new if "משכורת" in t.description]
+    sal[0].amount_agorot += 50000                      # +500 ₪ במשכורת הראשונה
+    run = None
+    for t in new:                                      # מעדכנים את יתרות הדף כמו שסימולציה הייתה עושה
+        if t.date >= sal[0].date and t.day_balance_agorot is not None:
+            t.day_balance_agorot += 50000
+    rep = audit(new, orig)
+    assert rep.ok
+    days = [r for r in rep.rows if r.day_end and r.gap is not None]
+    first = next(r for r in days if r.gap)
+    assert first.date == sal[0].date and first.gap_today == 50000 and first.gap_carried == 0
+    later = [r for r in days if r.date > sal[0].date]
+    assert all(r.gap == 50000 and r.gap_carried == 50000 and r.gap_today == 0 for r in later)
+    h = audit_html(rep)
+    assert "יתרות מצטברות" in h and "מועבר מימים קודמים" in h

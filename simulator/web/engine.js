@@ -584,6 +584,44 @@ const OSH = (() => {
       return res;
     }
   }
+  // ---------- balance audit (port of validate/audit.py) ----------
+  function auditKeys(txns) {
+    const seen = {};
+    return txns.map(t => { const k = [t.date, t.desc, t.ref].join("|"); const n = seen[k] || 0; seen[k] = n + 1; return k + "|" + n; });
+  }
+  function derivedOpening(txns) {
+    const first = txns.find(t => t.bal != null);
+    return first.bal - txns.filter(t => t.date <= first.date).reduce((s, t) => s + t.amt, 0);
+  }
+  function audit(txns, original) {
+    const opening = derivedOpening(original || txns);
+    const origBy = new Map(), origDay = {};
+    if (original) { auditKeys(original).forEach((k, i) => origBy.set(k, original[i])); original.forEach(t => { if (t.bal != null) origDay[t.date] = t.bal; }); }
+    let run = opening;
+    const keys = auditKeys(txns);
+    const rows = txns.map((t, i) => {
+      run += t.amt;
+      const o = original ? origBy.get(keys[i]) : null; if (o) origBy.delete(keys[i]);
+      const status = !original ? "same" : !o ? "added" : o.amt !== t.amt ? "changed" : "same";
+      return { date: t.date, desc: t.desc, ch: t.ch, ref: t.ref, amt: t.amt, run, stated: t.bal, origAmt: o ? o.amt : null, status };
+    });
+    const removedByDay = {}; for (const t of origBy.values()) removedByDay[t.date] = (removedByDay[t.date] || 0) - t.amt;
+    const byDay = {}; rows.forEach(r => (byDay[r.date] = byDay[r.date] || []).push(r));
+    let prevStated = opening, prevGap = 0, checked = 0; const errors = [];
+    for (const d of Object.keys(byDay).sort()) {
+      const day = byDay[d], last = day[day.length - 1]; last.end = true;
+      const sum = day.reduce((s, r) => s + r.amt, 0), stated = [...day].reverse().find(r => r.stated != null)?.stated ?? null;
+      const expected = prevStated + sum;
+      if (original) { last.gapToday = day.reduce((s, r) => s + r.amt - (r.origAmt || 0), 0) + (removedByDay[d] || 0); last.gapCarried = prevGap; }
+      if (stated != null) {
+        checked++; last.expected = expected; last.error = stated - expected; if (last.error) errors.push(last);
+        if (original && d in origDay) { last.origStated = origDay[d]; last.gap = stated - origDay[d]; prevGap = last.gap; }
+        prevStated = stated;
+      } else { prevStated = expected; if (original) prevGap += last.gapToday; }
+    }
+    return { rows, opening, checked, errors, removed: [...origBy.values()], hasOriginal: !!original };
+  }
+
   const rowsOfRes = res => res.days.flatMap(d => d.rows);
   const closing = res => res.daily[res.end];
   const minBal = res => Object.entries(res.daily).reduce((a, b) => b[1] < a[1] ? b : a);
@@ -599,6 +637,6 @@ const OSH = (() => {
 
   return { parseAmount, fmt, fromShekels, parseScaled, scalePct, roundDiv, dmy, dmyShort, addDays, weekday, month,
     Calendar, visualToLogical, parseCSV, parsePdfWords, merge, validate, compileRules, categorize, ruleFromApproval, UNCAT,
-    detect, KIND_HE, makeParams, Engine, rowsOfRes, closing, minBal, totalOf, daysOver, identityMismatches, makeTxn, finalize, splitChannel };
+    detect, KIND_HE, makeParams, audit, Engine, rowsOfRes, closing, minBal, totalOf, daysOver, identityMismatches, makeTxn, finalize, splitChannel };
 })();
 if (typeof module !== "undefined") module.exports = OSH;

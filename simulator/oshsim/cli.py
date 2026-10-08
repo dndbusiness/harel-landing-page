@@ -163,6 +163,33 @@ def cmd_simulate(args):
     return 0 if not problems or args.no_recalc else 3
 
 
+def cmd_audit(args):
+    from .ingest.merge import load_statement
+    from .outputs.audit_html import audit_html
+    from .outputs.html import html_to_pdf
+    from .validate.audit import audit
+    st = load_statement(args.file)
+    orig = load_statement(args.original) if args.original else None
+    rep = audit(st.transactions, orig.transactions if orig else None)
+    out = Path(args.out or Path(args.file).with_name(Path(args.file).stem + "_audit.html"))
+    out.write_text(audit_html(rep, source_name=Path(args.file).name,
+                              original_name=Path(args.original).name if args.original else ""), encoding="utf-8")
+    if args.pdf:
+        html_to_pdf(out, out.with_suffix(".pdf"))
+    print(f"{len(st.transactions)} תנועות, {rep.days_checked} ימים עם יתרה בדף")
+    if rep.ok:
+        print("אין שגיאות חישוב: כל יתרה = היתרה הקודמת + תנועות היום")
+    for r in rep.errors:
+        print(f"שגיאה {r.date:%d/%m/%Y}: בדף {fmt(r.stated)}, צפוי {fmt(r.expected_day)}, פער {fmt(r.error)}")
+    if rep.has_original:
+        for r in rep.rows:
+            if r.day_end and (r.gap or r.gap_today):
+                print(f"{r.date:%d/%m}: פער מהמקור {fmt(r.gap)} = מועבר {fmt(r.gap_carried)} + היום {fmt(r.gap_today)}"
+                      + (f" + שגיאה {fmt(r.error)}" if r.error else ""))
+    print(f"דוח: {out}")
+    return 0 if rep.ok else 4
+
+
 def cmd_purge(args):
     if not args.yes:
         print("מחיקה בלתי הפיכה של כל קבצי הלקוח. הוסיפו --yes לאישור.", file=sys.stderr)
@@ -202,6 +229,11 @@ def main(argv=None):
     p.add_argument("--pdf", action="store_true", help="גם PDF של הדף המדומה (דורש Chromium)")
     p.add_argument("--no-recalc", action="store_true")
     p.set_defaults(fn=cmd_simulate)
+
+    p = sp.add_parser("audit", help="בדיקת יתרות בדף (וגם פירוק הפער מול דף מקורי)")
+    p.add_argument("file"); p.add_argument("--original", help="הדף המקורי, לפירוק הפער")
+    p.add_argument("--out"); p.add_argument("--pdf", action="store_true")
+    p.set_defaults(fn=cmd_audit)
 
     p = sp.add_parser("purge", help="מחיקה מסודרת של תיקיית לקוח")
     p.add_argument("--client", required=True); p.add_argument("--yes", action="store_true"); p.set_defaults(fn=cmd_purge)

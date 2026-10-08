@@ -13,6 +13,7 @@
 from __future__ import annotations
 
 import re
+from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -33,6 +34,10 @@ HEADER_ALIASES: dict[str, list[str]] = {
 }
 
 ROW_TOLERANCE = 3.0   # נקודות — מילים באותו גובה בערך הן אותה שורה
+ORPHAN_TOLERANCE = 8.0  # נקודות — מספר שהוזח מעט מעל/מתחת לשורה שלו (תא עם שתי שורות)
+# גודל טקסט ביחס לגופן העיקרי בעמוד: קטן מ-90% = הערות ("במקור ..."), גדול פי 2.5 = סימן מים.
+# בדף הבנק: גוף 9.1, כותרת 20.4.
+MIN_TEXT_RATIO, MAX_TEXT_RATIO = 0.9, 2.5
 
 
 @dataclass
@@ -60,6 +65,12 @@ class MizrahiOshParser:
 
         with pdfplumber.open(str(path)) as pdf:
             for pno, page in enumerate(pdf.pages, start=1):
+                # סימן מים גדול והערות קטנות (בדף סימולציה) אינם חלק מהטבלה
+                sizes = Counter(round(c["size"], 1) for c in page.chars)
+                if sizes:
+                    body = sizes.most_common(1)[0][0]
+                    lo, hi = body * MIN_TEXT_RATIO, body * MAX_TEXT_RATIO
+                    page = page.filter(lambda o: o.get("object_type") != "char" or lo <= o.get("size", 0) <= hi)
                 words = page.extract_words(x_tolerance=1.5, y_tolerance=2, keep_blank_chars=False)
                 yield pno, [_Word(w["text"], w["x0"], w["x1"], w["top"]) for w in words]
 
@@ -139,16 +150,33 @@ class MizrahiOshParser:
                 rows = rows[idx + 1:]
             elif centers is None:
                 continue  # עמוד שער/סיכום לפני הטבלה
+            orphans: list[tuple[float, dict]] = []   # סכומים שנמצאו בשורה בלי תאריך
             for row in rows:
                 cells: dict[str, list[_Word]] = {}
                 for w in row:
                     cells.setdefault(self._nearest(w.xc, centers), []).append(w)
                 text = {c: self._line_text(ws, reversed_text) for c, ws in cells.items()}
                 raw = self._line_text(row, reversed_text)
+                top = row[0].top
                 date_txt = text.get("date", "")
                 if is_date(date_txt):
-                    display_rows.append({"cells": text, "page": pno, "raw": raw})
-                elif display_rows and text.get("description") and not text.get("amount"):
+                    rec = {"cells": text, "page": pno, "raw": raw, "top": top}
+                    display_rows.append(rec)
+                    # מספר שהופיע ממש מעל השורה (תא מודגש עם שתי שורות) שייך לה
+                    for o_top, o_cells in orphans:
+                        if abs(o_top - top) <= ORPHAN_TOLERANCE:
+                            self._fill_missing(rec, o_cells)
+                    orphans = []
+                    continue
+                numeric = {c: v for c, v in text.items() if c in ("amount", "balance") and looks_like_amount(v)}
+                if numeric and set(text) <= {"amount", "balance"}:
+                    last = display_rows[-1] if display_rows else None
+                    if last and last["page"] == pno and abs(last["top"] - top) <= ORPHAN_TOLERANCE:
+                        self._fill_missing(last, numeric)
+                    else:
+                        orphans.append((top, numeric))
+                elif display_rows and text.get("description") and not text.get("amount") \
+                        and not display_rows[-1]["cells"].get("description", "").endswith(text["description"]):
                     # שורת המשך של תיאור ארוך
                     display_rows[-1]["cells"]["description"] = normalize_spaces(
                         display_rows[-1]["cells"].get("description", "") + " " + text["description"])
@@ -165,8 +193,23 @@ class MizrahiOshParser:
                          period_label=period_label)
 
     @staticmethod
+    def _fill_missing(rec: dict, cells: dict) -> None:
+        for c, v in cells.items():
+            if not rec["cells"].get(c):
+                rec["cells"][c] = v
+                rec["raw"] += f" | {v}"
+
+    @staticmethod
     def _to_txn(r: dict, source: str) -> Transaction:
-        c = r["cells"]
+        c = dict(r["cells"])
+        # טקסט שאינו מספר שגלש לעמודת סכום/יתרה (למשל "(י)" בתיאור שנשבר לשתי שורות) — שייך לתיאור
+        for col in ("amount", "balance"):
+            toks = (c.get(col) or "").split()
+            nums = [t for t in toks if looks_like_amount(t)]
+            extra = [t for t in toks if not looks_like_amount(t)]
+            if extra and len(nums) <= 1:
+                c[col] = " ".join(nums)
+                c["description"] = normalize_spaces((c.get("description") or "") + " " + " ".join(extra))
         try:
             amount = parse_amount(c.get("amount", ""))
         except MoneyParseError as e:

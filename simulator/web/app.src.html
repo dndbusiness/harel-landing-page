@@ -131,6 +131,23 @@ svg.chart text{fill:var(--muted);font:11px var(--f-num)}
 #cmpTable tr.removed td.desc{text-decoration:line-through}
 #cmpTable td.gap.up{color:var(--pos);font-weight:700} #cmpTable td.gap.down{color:var(--neg);font-weight:700} #cmpTable td.gap.zero{color:var(--muted)}
 body.only-changes #cmpTable tr.quiet{display:none}
+#auditTable{border-collapse:separate;border-spacing:0}
+#auditTable thead th{position:sticky;z-index:2}
+#auditTable thead tr.g th{top:0;text-align:center;font-size:.85rem}
+#auditTable thead tr.c th{top:31px}
+#auditTable th.balg{background:#1f4e79;color:#fff}
+#auditTable th.gapg{background:#7a5200;color:#fff}
+#auditTable .b{background:color-mix(in srgb,#1f4e79 9%,var(--surface))}
+#auditTable .b.first{border-inline-start:3px solid #1f4e79}
+#auditTable .gp{background:color-mix(in srgb,#c99a3b 12%,var(--surface))}
+#auditTable .gp.first{border-inline-start:3px solid #7a5200}
+#auditTable td.run{color:var(--muted)}
+#auditTable tr.dayend td{border-bottom:2px solid var(--line)}
+#auditTable tr.dayend td.stated{font-weight:700}
+#auditTable td.okc{color:var(--pos);font-weight:700}
+#auditTable td.errc{background:color-mix(in srgb,var(--neg) 22%,var(--surface));color:var(--neg);font-weight:700}
+#auditTable tr.changed td.amt{background:var(--mark);font-weight:700}
+#auditTable tr.added td{background:var(--add)}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
 
@@ -149,6 +166,7 @@ body.only-changes #cmpTable tr.quiet{display:none}
       <button role="tab" data-t="results"><span class="k">5</span>תוצאות</button>
       <button role="tab" data-t="compare"><span class="k">6</span>אמיתי מול חדש</button>
       <button role="tab" data-t="statement"><span class="k">7</span>דף מדומה</button>
+      <button role="tab" data-t="audit"><span class="k">✓</span>בדיקת יתרות</button>
     </nav>
   </div>
 </header>
@@ -260,6 +278,20 @@ body.only-changes #cmpTable tr.quiet{display:none}
       <span class="muted"><span class="sw" style="background:var(--mark)"></span>סכום שונה · <span class="sw" style="background:var(--add)"></span>נוספה · <span class="sw" style="background:var(--del)"></span>בוטלה · יתרה מודגשת = יתרת סוף יום · הפרש = יתרה רצה בחדש פחות באמיתי</span>
     </div>
     <div class="cmpwrap"><table id="cmpTable"></table></div>
+  </section>
+
+  <!-- בדיקת יתרות -->
+  <section class="panel" data-p="audit" hidden>
+    <div class="box">
+      <header><h2>בדיקת יתרות בדף</h2></header>
+      <p class="muted small">העלו דף עו״ש: מקורי, דף סימולציה או דף שנערך ידנית. לכל יום נבדק שהיתרה שבדף שווה ליתרה של היום הקודם ועוד התנועות של היום. אם מעלים גם את הדף המקורי, הפער של כל יום מתפרק לפער שהועבר מימים קודמים ולשינויים של אותו יום.</p>
+      <div class="fields">
+        <label class="f"><span>הדף לבדיקה (PDF או CSV)</span><input type="file" id="auditFile" accept=".pdf,.csv"></label>
+        <label class="f"><span>הדף המקורי, להשוואה (רשות)</span><input type="file" id="auditOrig" accept=".pdf,.csv"></label>
+      </div>
+      <div class="row"><button class="btn" id="auditRun">בדיקה</button><button class="btn ghost" id="auditSample">בדיקת התרחיש מול הדוגמה</button><span class="small" id="auditMsg"></span></div>
+    </div>
+    <div id="auditOut"></div>
   </section>
 
   <!-- 6 -->
@@ -671,6 +703,58 @@ function renderCompare() {
     card("פער יתרה גבוה ביותר", gap(up) > 0 ? money(gap(up)) : "0.00", gap(up) > 0 ? OSH.dmy(up.d) : "") + card("פער יתרה נמוך ביותר", gap(down) < 0 ? money(gap(down)) : "0.00", gap(down) < 0 ? OSH.dmy(down.d) : "");
 }
 $("#onlyChanges").addEventListener("change", e => document.body.classList.toggle("only-changes", e.target.checked));
+
+// ---------- balance audit ----------
+function renderAudit(rep, names) {
+  const sg = a => a == null ? "" : (a > 0 ? "+" : "") + OSH.fmt(a);
+  const o = rep.hasOriginal, byDay = {}; rep.rows.forEach(r => (byDay[r.date] = byDay[r.date] || []).push(r));
+  const body = Object.keys(byDay).sort().reverse().flatMap(d => byDay[d].map(r => {
+    const tag = r.status === "changed" ? ' <span class="pill est">שונה</span>' : r.status === "added" ? ' <span class="pill">חדשה</span>' : "";
+    const amt = money(r.amt) + (r.status === "changed" ? `<div class="muted small">במקור ${OSH.fmt(r.origAmt)}</div>` : "");
+    const gaps = !o ? "" : r.end ? `<td class="n gp first">${sg(r.gapCarried)}</td><td class="n gp">${sg(r.gapToday)}</td><td class="n gp"><b>${r.gap != null ? sg(r.gap) || "0.00" : ""}</b></td>` : `<td class="gp first"></td><td class="gp"></td><td class="gp"></td>`;
+    const bal = r.end && r.stated != null
+      ? `<td class="n b first run">${OSH.fmt(r.run)}</td><td class="n b stated">${money(r.stated)}</td><td class="n b">${OSH.fmt(r.expected)}</td>${r.error ? `<td class="errc">✗ פער ${sg(r.error)}</td>` : `<td class="okc">✓ תקין</td>`}`
+      : `<td class="n b first run">${OSH.fmt(r.run)}</td><td class="b"></td><td class="b"></td><td class="b"></td>`;
+    return `<tr class="${r.status !== "same" ? r.status : ""}${r.end ? " dayend" : ""}"><td>${OSH.dmyShort(r.date)}</td><td class="desc">${r.ch === "direct" ? "(י) " : r.ch === "banker" ? "(פ) " : ""}${h(r.desc)}${tag}</td><td class="n amt">${amt}</td><td class="n">${h(r.ref)}</td>${gaps}${bal}</tr>`;
+  })).join("");
+  // explanation, consecutive carried days collapsed
+  const ends = rep.rows.filter(r => r.end && r.gap != null), lines = [];
+  for (let i = 0; i < ends.length; i++) {
+    const r = ends[i];
+    if (!(r.gap || r.gapToday || r.gapCarried || r.error)) continue;
+    if (r.gapToday === 0 && !r.error && r.gap) {
+      let j = i; while (j + 1 < ends.length && ends[j + 1].gapToday === 0 && !ends[j + 1].error && ends[j + 1].gap === r.gap) j++;
+      lines.push(`<li><b>${OSH.dmyShort(r.date).slice(0, 5)}${j > i ? "–" + OSH.dmyShort(ends[j].date).slice(0, 5) : ""}</b>: הפער ${sg(r.gap)} נמשך מימים קודמים, בלי שינוי בתנועות (${j === i ? "יום אחד" : (j - i + 1) + " ימים"})</li>`); i = j; continue;
+    }
+    const parts = [r.gapCarried ? `${sg(r.gapCarried)} שהועברו מימים קודמים` : "", r.gapToday ? `${sg(r.gapToday)} משינויי היום` : "", r.error ? `${sg(r.error)} שגיאת חישוב` : ""].filter(Boolean);
+    lines.push(`<li><b>${OSH.dmyShort(r.date).slice(0, 5)}</b>: פער ${r.gap ? sg(r.gap) : "0.00"} = ${parts.join(" ועוד ")}${r.gap === 0 ? " — הפער נסגר" : ""}</li>`);
+  }
+  const closeStated = [...rep.rows].reverse().find(r => r.stated != null)?.stated;
+  $("#auditOut").innerHTML = `<div class="panel">
+    <div class="banner ${rep.errors.length ? "err" : "ok"}">${rep.errors.length ? `<div><b>נמצאו ${rep.errors.length} ימים שבהם היתרה בדף לא מתיישבת עם התנועות.</b><ul class="plain">${rep.errors.map(r => `<li>${OSH.dmy(r.date)}: בדף ${OSH.fmt(r.stated)}, צפוי ${OSH.fmt(r.expected)}, פער ${sg(r.error)}</li>`).join("")}</ul></div>` : `<b>אין שגיאות חישוב.</b>&nbsp;בכל ${rep.checked} הימים, היתרה בדף שווה ליתרה של היום הקודם ועוד התנועות של היום.`}</div>
+    <div class="stats"><div class="stat"><span class="k">יתרת פתיחה</span><span class="v">${money(rep.opening)}</span><span class="d">${o ? "נגזרה מהדף המקורי" : "נגזרה מהיתרה הראשונה בדף"}</span></div>
+      <div class="stat"><span class="k">ימים שנבדקו</span><span class="v">${rep.checked}</span></div><div class="stat"><span class="k">ימים עם שגיאה</span><span class="v">${rep.errors.length}</span></div>
+      <div class="stat"><span class="k">סגירה בדף</span><span class="v">${money(closeStated)}</span></div><div class="stat"><span class="k">סגירה מחושבת</span><span class="v">${money(rep.rows[rep.rows.length - 1].run)}</span></div></div>
+    ${o ? `<div class="box"><header><h2>למה היתרה שונה מהמקור?</h2></header><p class="muted small">פער שנפתח ביום מסוים ממשיך לכל הימים שאחריו, עד שתנועה אחרת מקזזת אותו.</p><ul class="plain small">${lines.join("") || "<li>אין פער מול המקור</li>"}</ul></div>` : ""}
+    <p class="muted small">${h(names)}</p>
+    <div class="cmpwrap"><table id="auditTable"><thead><tr class="g"><th colspan="4"></th>${o ? '<th class="gapg" colspan="3">פער מול הדף המקורי</th>' : ""}<th class="balg" colspan="4">יתרות מצטברות</th></tr>
+      <tr class="c"><th>תאריך</th><th>סוג תנועה</th><th>זכות/חובה</th><th>אסמכתה</th>${o ? '<th class="gp first">מועבר מימים קודמים</th><th class="gp">משינויי היום</th><th class="gp">סה״כ פער</th>' : ""}<th class="b first">יתרה רצה (חישוב)</th><th class="b">יתרה בדף</th><th class="b">צפוי (קודמת + היום)</th><th class="b">בדיקה</th></tr></thead><tbody>${body}</tbody></table></div></div>`;
+}
+$("#auditRun").addEventListener("click", async () => {
+  const msg = $("#auditMsg"), f = $("#auditFile").files[0], g = $("#auditOrig").files[0];
+  msg.className = "small"; if (!f) { msg.textContent = "בחרו את הדף לבדיקה."; return; }
+  msg.textContent = "קורא…";
+  try {
+    const [st] = await readFiles([f]); const og = g ? (await readFiles([g]))[0] : null;
+    renderAudit(OSH.audit(st.txns, og ? og.txns : null), f.name + (g ? " מול המקור " + g.name : "")); msg.textContent = "";
+  } catch (e) { msg.className = "small neg"; msg.textContent = e.message; }
+});
+$("#auditSample").addEventListener("click", () => {
+  if (!S.out) { $("#auditMsg").textContent = "הריצו קודם תרחיש."; return; }
+  // הדף המדומה של התרחיש, כפי שהוא נראה כדף: תנועות + יתרת סוף יום בשורה האחרונה
+  const sim = S.out.scen.days.filter(d => d.date <= S.txns[S.txns.length - 1].date).flatMap(d => d.rows.map((r, i, all) => ({ date: r.date, desc: r.desc, ch: r.ch, ref: r.ref, amt: r.amt, bal: i === all.length - 1 ? d.bal : null })));
+  renderAudit(OSH.audit(sim, S.txns), "התרחיש הנוכחי מול דף הדוגמה");
+});
 
 // ---------- Excel ----------
 function buildWorkbook() {
