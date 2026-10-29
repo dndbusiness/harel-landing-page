@@ -9,7 +9,7 @@
 from __future__ import annotations
 
 import html
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from ..engine.simulate import SimResult
 from ..model.money import fmt
@@ -72,6 +72,16 @@ def _amt(a: int | None) -> str:
     return f'<span class="n {cls}">{fmt(a)}</span>'
 
 
+def _ascending(txns: list[Transaction]) -> bool:
+    """האם הדף המקורי הודפס בסדר עולה (מזרחי מאפשר את שני הסדרים): הימים הראשונים בעמוד הראשון."""
+    paged = [t for t in txns if t.page is not None]
+    if not paged or paged[0].date == paged[-1].date:
+        return False
+    first = min(t.page for t in paged if t.date == paged[0].date)
+    last = min(t.page for t in paged if t.date == paged[-1].date)
+    return first < last
+
+
 def replica_html(txns: list[Transaction], opening: int, scen: SimResult, account_hint: str = "",
                  period_label: str = "", generated: datetime | None = None, was_label: str = "במקור",
                  compare_to_stated: bool = False) -> str:
@@ -87,7 +97,13 @@ def replica_html(txns: list[Transaction], opening: int, scen: SimResult, account
 
     body = []
     n_amt = n_bal = 0
-    for d in sorted(days, reverse=True):                 # כמו בדף: ימים מהחדש לישן
+    ascending = _ascending(txns)
+    if ascending:                                          # דף בסדר עולה נפתח ב"יתרה קודמת"
+        body.append(f'<tr class="section"><td colspan="7">יתרה קודמת נכון ל-{min(days) - timedelta(days=1):%d/%m/%Y}'
+                    f' : ₪{fmt(opening)}</td></tr>')
+    else:
+        body.append('<tr class="section"><td colspan="7">תנועות אחרונות</td></tr>')
+    for d in sorted(days, reverse=not ascending):         # כמו בדף: באותו סדר ימים כמו המקור
         for r in days[d]:                                 # בתוך יום בסדר הדף, יתרה בשורה האחרונה
             desc = html.escape(r.description + CHANNEL_SUFFIX.get(r.channel or "", ""))
             amt_cell = f'<td class="amt">{_amt(r.new_amount if r.status != "removed" else r.old_amount)}</td>'
@@ -138,7 +154,7 @@ def replica_html(txns: list[Transaction], opening: int, scen: SimResult, account
   <table>
     <colgroup><col class="c-date"><col class="c-vdate"><col class="c-desc"><col class="c-amt"><col class="c-bal"><col class="c-ref"><col class="c-pad"></colgroup>
     <thead><tr><th>תאריך</th><th>תאריך ערך</th><th>סוג תנועה</th><th class="amt">זכות/חובה</th><th class="bal">יתרה בש"ח</th><th class="ref">אסמכתה</th><th></th></tr></thead>
-    <tbody><tr class="section"><td colspan="7">תנועות אחרונות</td></tr>{''.join(body)}</tbody>
+    <tbody>{''.join(body)}</tbody>
   </table>
   <p class="legend">(י)-פעולה בערוץ ישיר. (פ)-פעולה על ידי בנקאי.</p>
 </div></body></html>"""

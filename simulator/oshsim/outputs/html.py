@@ -203,13 +203,13 @@ def report_html(base: SimResult, scen: SimResult, limit: int | None, scenario_li
 
 
 def chromium_path() -> str | None:
-    for p in ("/opt/pw-browsers/chromium-1194/chrome-linux/chrome",):
+    for p in ("/opt/pw-browsers/chromium",):
         if Path(p).exists():
             return p
     for name in ("chromium", "chromium-browser", "google-chrome", "chrome"):
         if shutil.which(name):
             return shutil.which(name)
-    found = sorted(Path("/opt/pw-browsers").glob("chromium-*/chrome-linux/chrome")) if Path("/opt/pw-browsers").exists() else []
+    found = sorted(Path("/opt/pw-browsers").glob("chromium-*/chrome-linux*/chrome")) if Path("/opt/pw-browsers").exists() else []
     return str(found[-1]) if found else None
 
 

@@ -13,6 +13,13 @@ rules:
     description: "עמל.*(ישיר|אינטרנט|ערוץ)"
     direction: debit
     kind: direct_channel_fee
+  # ריבית על פיקדון (פק"מ) לא תלויה ביתרת העו"ש — לא מחושבת מחדש בתרחיש
+  - id: interest-deposit
+    priority: 895
+    category: חיסכון והשקעות
+    subcategory: ריבית פיקדון
+    description: "ריבית (פק|פיק|פק\"מ)"
+    direction: credit
   - id: interest-debit
     priority: 890
     category: עמלות וריבית
@@ -90,7 +97,7 @@ rules:
     priority: 360
     category: כרטיסי אשראי
     subcategory: חיוב מרוכז
-    description: "ישראכרט|כאל|ויזה|מקס|לאומי קארד|אמריקן|דיינרס|כרטיס"
+    description: "ישראכרט|כאל|ויזה|מקס|מסטרקרד|לאומי קארד|אמריקן|דיינרס|כרטיס"
     direction: debit
     kind: card_charge
 

@@ -42,6 +42,7 @@ class Selector:
     description: Optional[str] = None     # regex
     recurring_id: Optional[str] = None
     direction: Optional[str] = None       # credit / debit
+    txn_id: Optional[str] = None          # שורה אחת מהדף (המזהה מ-review)
 
     def matches(self, r: SimRow) -> bool:
         if r.kind in ("direct_channel_fee", "interest"):
@@ -54,6 +55,8 @@ class Selector:
             return False
         if self.recurring_id and r.recurring_id != self.recurring_id:
             return False
+        if self.txn_id and r.txn_id != self.txn_id:
+            return False
         if self.direction == "credit" and r.amount <= 0:
             return False
         if self.direction == "debit" and r.amount >= 0:
@@ -62,7 +65,7 @@ class Selector:
 
     def describe(self) -> str:
         names = {"category": "קטגוריה", "subcategory": "תת-קטגוריה", "description": "תיאור",
-                 "recurring_id": "דפוס", "direction": "כיוון"}
+                 "recurring_id": "דפוס", "direction": "כיוון", "txn_id": "שורה"}
         parts = [f"{names[k]} '{v}'" for k, v in vars(self).items() if v]
         return ", ".join(parts) or "כל התנועות"
 
@@ -143,9 +146,12 @@ class ChangeAmount(Delta):
                                    note=self.label))
             else:
                 out.append(r)
+        note = None
         if card_hits:
-            ctx.notes.append(f"{self.label}: {card_hits} חיובי כרטיס אשראי שונו כסכום כולל — זה לא שינוי "
+            note = (f"{self.label}: {card_hits} חיובי כרטיס אשראי שונו כסכום כולל — זה לא שינוי "
                              "בקטגוריית הוצאה, כי אין דף אשראי מקושר שמפרק את החיוב")
+        if note and note not in ctx.notes:
+            ctx.notes.append(note)
         if hit == 0:
             ctx.notes.append(f"אזהרה — {self.label}: אין שורות שמתאימות ל-{self.select.describe()}")
         return out

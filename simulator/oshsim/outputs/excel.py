@@ -64,16 +64,21 @@ def write_excel(path: str | Path, txns: list[Transaction], base: SimResult, scen
                 [12, 9, 34, 6, 16, 16, 10, 14, 14, 14, 10])
     ws.append(["", "", "יתרת פתיחה (נגזרת)", "", "", "", "", None, to_decimal(base.opening)])
     ws.cell(2, 9).number_format = NUM
+    # היתרה בדף היא יתרת סוף יום. הבנק מדפיס אותה לפעמים על שורה שאחריה עוד תנועות של אותו יום
+    # (למשל בשבירת עמוד), ולכן היא נבדקת בשורה האחרונה של היום
+    day_balance = {t.date: t.day_balance_agorot for t in txns if t.day_balance_agorot is not None}
+    last_of_day = {t.date: i for i, t in enumerate(txns)}
     for i, t in enumerate(txns, start=3):
+        bal = day_balance.get(t.date) if last_of_day[t.date] == i - 3 else None
         ws.append([t.date, _m(t.date), t.description, CHANNEL_HE.get(t.channel, ""), t.category, t.subcategory,
                    t.reference, to_decimal(t.amount_agorot), f"=I{i - 1}+H{i}",
-                   to_decimal(t.day_balance_agorot) if t.day_balance_agorot is not None else None,
+                   to_decimal(bal) if bal is not None else None,
                    f'=IF(J{i}="","",ROUND(I{i}-J{i},2))'])
         ws.cell(i, 1).number_format = DATE
         for c in (8, 9, 10):
             ws.cell(i, c).number_format = NUM
-        if t.day_balance_agorot is not None:
-            check["actual_balance"].append((f"I{i}", t.day_balance_agorot))
+        if bal is not None:
+            check["actual_balance"].append((f"I{i}", bal))
     actual_last = len(txns) + 2
 
     # ---------- תנועות תרחיש ----------
