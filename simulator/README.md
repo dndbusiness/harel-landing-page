@@ -76,7 +76,8 @@ python3 -m oshsim audit דוח.pdf ... --annotate report|reference   # מסמן 
 | `loan_schedule` | פירעון/מחזור הלוואה | `select`, `start`, `schedule_csv` (מהלקוח), `payoff_amount` |
 | `rate_change` | טבלת ריבית חלופית | `rates` |
 
-`select` בוחר שורות לפי `category`, `subcategory`, `description` (regex), `recurring_id`, `direction`.
+`select` בוחר שורות לפי `category`, `subcategory`, `description` (regex), `recurring_id`, `direction`,
+או `txn_id` לשורה אחת מהדף (המזהה שמופיע ב-`review`).
 `mode: forward` עם `forward_months` מקרין קדימה לפי הדפוסים, והפלט מסומן כהערכה.
 
 ## איך מחושבות העמלות והריבית בתרחיש

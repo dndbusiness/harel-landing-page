@@ -37,6 +37,16 @@ def _prev_month(d: date) -> str:
     return _month(first)
 
 
+def _side(r) -> int:
+    """צד של שורת ריבית: 1 = ריבית זכות, -1 = ריבית חובה."""
+    return 1 if r.amount > 0 else -1
+
+
+def _split_sides(rows) -> bool:
+    """ביום רישום יש גם שורת זכות וגם שורת חובה — כל אחת מקבלת את הצד שלה בלבד."""
+    return len({_side(r) for r in rows}) == 2
+
+
 def _round(x: Decimal) -> int:
     return int(x.quantize(Decimal("1"), rounding=ROUND_HALF_UP))
 
@@ -208,19 +218,25 @@ class Engine:
     def calibrate_interest(self) -> list[InterestCalibration]:
         if not self.params.interest.known:
             return []
-        out, prev = [], None
+        posts: dict[date, list[SimRow]] = defaultdict(list)
         for r in self.hist_rows:
-            if r.kind != INTEREST:
-                continue
+            if r.kind == INTEREST:
+                posts[r.date].append(r)
+        out, prev = [], None
+        for day in sorted(posts):
             start = prev or self.first
-            acc = Decimal(0)
+            acc = {1: Decimal(0), -1: Decimal(0)}
             d = start
-            while d < r.date:
-                acc += self._daily_interest(self.hist_balance[d], d, self.params.interest.rates)
+            while d < day:
+                i = self._daily_interest(self.hist_balance[d], d, self.params.interest.rates)
+                acc[1 if i > 0 else -1] += i
                 d += timedelta(days=1)
-            out.append(InterestCalibration(r.date, start, r.date - timedelta(days=1), _round(acc), r.amount,
-                                           partial_period=prev is None))
-            prev = r.date
+            split = _split_sides(posts[day])
+            for r in posts[day]:
+                model = acc[_side(r)] if split else acc[1] + acc[-1]
+                out.append(InterestCalibration(day, start, day - timedelta(days=1), _round(model), r.amount,
+                                               partial_period=prev is None))
+            prev = day
         return out
 
     # ---------- Forward ----------
@@ -294,11 +310,14 @@ class Engine:
         days: list[DayEntry] = []
         daily: dict[date, int] = {}
         bal = self.opening
-        acc_run = Decimal(0)    # ריבית שנצברה בריצה הזו מאז הרישום הקודם
-        acc_hist = Decimal(0)   # אותו דבר על יתרות הבסיס ושיעורי הבסיס
+        # ריבית שנצברה מאז הרישום הקודם, לפי צד (1 = זכות, -1 = חובה): בריצה הזו ובבסיס
+        acc_run = {1: Decimal(0), -1: Decimal(0)}
+        acc_hist = {1: Decimal(0), -1: Decimal(0)}
         d = start
         while d <= end:
             todays = []
+            split_today = _split_sides([r for r in by_day.get(d, []) if r.kind == INTEREST])
+            posted = False
             for r in by_day.get(d, []):
                 if r.kind == FEE and self.params.direct_fee:
                     fee = self.params.direct_fee
@@ -313,21 +332,27 @@ class Engine:
                         n = counts.get(_prev_month(d), 0)
                         r = replace(r, amount=-fee.fee(n), reference=str(n))
                 elif r.kind == INTEREST and interest_recomputed:
+                    # במזרחי ריבית זכות וריבית חובה נרשמות בשורות נפרדות: כל שורה מקבלת את הצד שלה
+                    sides = (_side(r),) if split_today else (1, -1)
                     if r.origin == "historical":
-                        diff = _round(acc_run - acc_hist)
+                        diff = _round(sum(acc_run[k] - acc_hist[k] for k in sides))
                         if diff:
                             r = replace(r, origin="modified", base_amount=r.amount, amount=r.amount + diff,
                                         note="ריבית הותאמה לשינוי ביתרה/בשיעור")
                     else:
-                        r = replace(r, amount=_round(acc_run))
-                    acc_run = acc_hist = Decimal(0)
+                        r = replace(r, amount=_round(sum(acc_run[k] for k in sides)))
+                    posted = True
                 todays.append(r)
+            if posted:
+                acc_run, acc_hist = {1: Decimal(0), -1: Decimal(0)}, {1: Decimal(0), -1: Decimal(0)}
             bal += sum(r.amount for r in todays)
             daily[d] = bal
             if interest_recomputed:
-                acc_run += self._daily_interest(bal, d, rate_table)
+                i = self._daily_interest(bal, d, rate_table)
+                acc_run[1 if i > 0 else -1] += i
                 if d in self.hist_balance:
-                    acc_hist += self._daily_interest(self.hist_balance[d], d, self.params.interest.rates)
+                    i = self._daily_interest(self.hist_balance[d], d, self.params.interest.rates)
+                    acc_hist[1 if i > 0 else -1] += i
             if todays:
                 days.append(DayEntry(d, todays, bal))
             d += timedelta(days=1)
@@ -340,7 +365,7 @@ class Engine:
         res.interest_is_estimate = (not interest_recomputed or not full or
                                     any(abs(c.error_pct) > self.params.interest.max_calibration_error_pct for c in full))
         if interest_recomputed:
-            res.unposted_interest = _round(acc_run)
+            res.unposted_interest = _round(acc_run[1] + acc_run[-1])
         return res
 
 

@@ -249,3 +249,37 @@ def test_modified_row_keeps_its_place_in_the_day(loaded, params):
     """שינוי סכום לא מזיז את התנועה בתוך היום — הדף המדומה נשאר באותו סדר כמו המקור."""
     out = run(loaded, params, ChangeAmount(Selector(description="משכנתא"), pct=Decimal(5), label="x"))
     assert [r.txn_id for r in out.scenario.rows()] == [t.id for t in loaded.txns]
+
+
+def test_select_single_row_by_txn_id(loaded, params):
+    """שתי שורות זהות באותו יום: txn_id משנה רק אחת מהן."""
+    target = next(t for t in loaded.txns if t.amount_agorot < 0)
+    out = run(loaded, params, ChangeAmount(Selector(txn_id=target.id), set_to=-12345, label="שורה אחת"))
+    changed = [r for r in out.scenario.rows() if r.origin == "modified" and r.kind != "interest"]
+    assert [(r.txn_id, r.amount) for r in changed] == [(target.id, -12345)]
+
+
+def test_interest_credit_and_debit_rows_get_their_own_side():
+    """מזרחי רושם ריבית זכות וריבית חובה בשורות נפרדות באותו יום: כל שורה מותאמת רק לצד שלה,
+    וריבית פק"מ (פיקדון) לא נחשבת ריבית עו"ש."""
+    from oshsim.engine.simulate import Engine
+    from oshsim.model.transaction import Transaction
+    p = Params.from_dict({"interest": {"rates": [{"from": "2026-01-01", "debit_annual_pct": "10",
+                                                  "credit_annual_pct": "1"}]}})
+    rules = load_rules(CONFIG / "rules.yaml")
+    t = [Transaction(date(2026, 1, 1), "פתיחה", 0, day_balance_agorot=1_000_000),
+         Transaction(date(2026, 1, 11), "משיכה", -2_000_000, day_balance_agorot=-1_000_000),
+         Transaction(date(2026, 1, 15), "ריבית פקמ <", 500, day_balance_agorot=-999_500),
+         Transaction(date(2026, 2, 1), 'ריבית עו"ש', 274),
+         Transaction(date(2026, 2, 1), 'ריבית עו"ש', -5_751, day_balance_agorot=-1_004_977)]
+    categorize(t, rules)
+    from oshsim.categorize.rules import rule_kind
+    eng = Engine(t, 1_000_000, p, BusinessCalendar(), lambda x: rule_kind(x, rules))
+    assert [r.kind for r in eng.hist_rows][2:] == ["", "interest", "interest"]
+    cal = eng.run(Scenario("בסיס")).interest_calibration
+    assert [c.model_amount for c in cal] == [274, -5751]
+    # 1,000 ₪ נוספים ב-11/01 (יתרת חובה) ומקוזזים ב-12/01: רק שורת ריבית החובה זזה
+    res = eng.run(Scenario("t", deltas=[OneOff(date(2026, 1, 11), 100_000, "זיכוי"),
+                                        OneOff(date(2026, 1, 12), -100_000, "חיוב")]))
+    post = [r.amount for r in res.rows() if r.kind == "interest" and r.date == date(2026, 2, 1)]
+    assert post == [274, -5_751 + 27]
